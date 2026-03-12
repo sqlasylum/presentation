@@ -18,10 +18,36 @@ SELECT
     vacuum_count,
     autovacuum_count
 FROM pg_stat_user_tables
+where schemaname = 'bluebox'
 ORDER BY n_dead_tup DESC;
 
 
---Analyze stats 
-SELECT schemaname,relname as tablename, last_autoanalyze, last_autovacuum, last_analyze, last_vacuum FROM pg_stat_all_tables where (schemaname not like '%temp%' and schemaname not like '%toast%') and last_analyze is not null and schemaname = 'public' order by last_analyze desc limit 10;
---Last vacuum variation 
-select min(last_vacuum),max(last_vacuum) from pg_stat_all_tables where schemaname = 'public';
+
+--TXN Wraparound
+-- Query to monitor maximum XID age across databases
+-- 400000000 is a warning threshold, adjust as needed based on your workload and maintenance schedule
+SELECT datname, age(datfrozenxid) as xid_age
+FROM pg_database
+ORDER BY xid_age DESC;
+
+
+
+--From Crunchy Data
+--https://www.crunchydata.com/blog/monitoring-postgresql-xid-wraparound-risk
+WITH max_age AS (
+    SELECT 2000000000 as max_old_xid
+        , setting AS autovacuum_freeze_max_age
+        FROM pg_catalog.pg_settings
+        WHERE name = 'autovacuum_freeze_max_age' )
+, per_database_stats AS (
+    SELECT datname
+        , m.max_old_xid::int
+        , m.autovacuum_freeze_max_age::int
+        , age(d.datfrozenxid) AS oldest_current_xid
+    FROM pg_catalog.pg_database d
+    JOIN max_age m ON (true)
+    WHERE d.datallowconn )
+SELECT max(oldest_current_xid) AS oldest_current_xid
+    , max(ROUND(100*(oldest_current_xid/max_old_xid::float))) AS percent_towards_wraparound
+    , max(ROUND(100*(oldest_current_xid/autovacuum_freeze_max_age::float))) AS percent_towards_emergency_autovac
+FROM per_database_stats
