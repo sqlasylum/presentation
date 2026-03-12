@@ -1,0 +1,1 @@
+In this new directory, blue_loader.  I need to create a python script/tool that can run and load the PG database located at localhost:5432 User postgres, password is password.  The database is called bluebox. it has a procedure called 
