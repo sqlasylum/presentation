@@ -1,1 +1,2 @@
-#scripts for presentations around checks 
+Scripts used in various presentations. 
+
