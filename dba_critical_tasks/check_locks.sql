@@ -7,6 +7,7 @@ select pid,
 from pg_stat_activity
 where cardinality(pg_blocking_pids(pid)) > 0;
 
+
 --Showing locks and lead blockers together
 WITH RECURSIVE 
 l AS (

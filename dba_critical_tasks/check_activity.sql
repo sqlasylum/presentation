@@ -1,4 +1,5 @@
 
+--Check Activity 
 SELECT pg_stat_activity.pid,datname,state,wait_event_type,
 (now() - pg_stat_activity.xact_start) AS "Transaction duration",
 (now() - pg_stat_activity.state_change) AS "Query state change",
@@ -13,7 +14,7 @@ WHERE
 --AND   
 (pg_stat_activity.backend_type = ANY (ARRAY['client backend'::text])) 
 AND   (pg_stat_activity.application_name <> ALL (ARRAY['vacuumdb'::text, 'pg_dump'::text])) 
---and state = 'active'
+and state = 'active'
 --and usename = 'specfic_user'
 order by 5 desc,application_name, 3;
 
