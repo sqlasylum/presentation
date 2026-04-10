@@ -1,0 +1,58 @@
+
+services:
+  pg-primary:
+    build: .
+    container_name: pg-primary
+    hostname: pg-primary
+    environment:
+      PG_ROLE: primary
+      PG_VERSION: "15"
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./config:/config
+      - ./scripts:/scripts
+      - primary_data:/var/lib/postgresql
+    ports:
+      - "5450:5432"   # PostgreSQL
+      - "2222:22"     # SSH: ssh -p 2222 postgres@localhost
+    networks:
+      pgnet:
+        ipv4_address: 172.28.0.10
+    healthcheck:
+      test: ["CMD-SHELL", "/usr/lib/postgresql/15/bin/pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-standby:
+    build: .
+    container_name: pg-standby
+    hostname: pg-standby
+    environment:
+      PG_ROLE: standby
+      PG_VERSION: "15"
+      PRIMARY_HOST: pg-primary
+      REPL_PASSWORD: replicator
+    volumes:
+      - ./scripts:/scripts
+      - standby_data:/var/lib/postgresql
+    ports:
+      - "5433:5432"   # PostgreSQL (read-only)
+      - "2223:22"     # SSH: ssh -p 2223 postgres@localhost
+    depends_on:
+      pg-primary:
+        condition: service_healthy
+    networks:
+      pgnet:
+        ipv4_address: 172.28.0.11
+
+networks:
+  pgnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/24
+
+volumes:
+  primary_data:
+  standby_data:

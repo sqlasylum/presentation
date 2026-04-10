@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PostgreSQL Primary / Hot Standby Upgrade Diagram</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 40px;
+    }
+    h1 {
+      text-align: center;
+      color: #63b3ed;
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #718096;
+      font-size: 0.9rem;
+      margin-bottom: 40px;
+    }
+    .phase {
+      background: #1a1d27;
+      border: 1px solid #2d3748;
+      border-radius: 10px;
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      position: relative;
+    }
+    .phase-label {
+      position: absolute;
+      top: -13px;
+      left: 20px;
+      background: #2b6cb0;
+      color: #fff;
+      font-size: 0.72rem;
+      font-weight: bold;
+      padding: 3px 12px;
+      border-radius: 20px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .phase-label.warn  { background: #c05621; }
+    .phase-label.ok    { background: #276749; }
+    .phase-label.done  { background: #553c9a; }
+
+    .phase h2 {
+      font-size: 1rem;
+      color: #90cdf4;
+      margin-bottom: 16px;
+      margin-top: 4px;
+    }
+
+    /* ---- node grid ---- */
+    .nodes {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .node {
+      border-radius: 8px;
+      padding: 14px 20px;
+      min-width: 160px;
+      text-align: center;
+      border: 2px solid;
+      position: relative;
+    }
+    .node .role {
+      font-size: 0.65rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .node .name {
+      font-size: 1rem;
+      font-weight: bold;
+    }
+    .node .version {
+      font-size: 0.78rem;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+    .node .status {
+      font-size: 0.7rem;
+      margin-top: 6px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      display: inline-block;
+    }
+
+    /* color themes */
+    .primary  { background: #1a365d; border-color: #3182ce; }
+    .primary .role { color: #63b3ed; }
+    .primary .status { background: #2c5282; color: #bee3f8; }
+
+    .standby  { background: #1c3d2e; border-color: #38a169; }
+    .standby .role { color: #68d391; }
+    .standby .status { background: #276749; color: #c6f6d5; }
+
+    .promoting { background: #3d2c0a; border-color: #dd6b20; }
+    .promoting .role { color: #fbd38d; }
+    .promoting .status { background: #7b341e; color: #feebc8; }
+
+    .upgrading { background: #2d1b5e; border-color: #805ad5; }
+    .upgrading .role { color: #d6bcfa; }
+    .upgrading .status { background: #44337a; color: #e9d8fd; }
+
+    .offline { background: #1a202c; border-color: #4a5568; opacity: 0.6; }
+    .offline .role { color: #a0aec0; }
+    .offline .status { background: #2d3748; color: #a0aec0; }
+
+    .new-standby { background: #1c3d2e; border-color: #38a169; }
+    .new-standby .role { color: #68d391; }
+    .new-standby .status { background: #276749; color: #c6f6d5; }
+
+    /* arrows */
+    .arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #718096;
+      font-size: 0.7rem;
+    }
+    .arrow .line {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+    .arrow.rep  { color: #68d391; }
+    .arrow.cut  { color: #fc8181; }
+    .arrow.vip  { color: #fbd38d; }
+    .arrow.new-rep { color: #9f7aea; }
+
+    /* clients box */
+    .clients {
+      background: #2d3748;
+      border: 2px dashed #4a5568;
+      border-radius: 8px;
+      padding: 10px 18px;
+      text-align: center;
+      min-width: 120px;
+    }
+    .clients .role { font-size: 0.65rem; letter-spacing: 1px; color: #a0aec0; text-transform: uppercase; margin-bottom: 4px; }
+    .clients .name { font-size: 0.9rem; font-weight: bold; color: #e2e8f0; }
+
+    /* notes */
+    .notes {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: #171923;
+      border-left: 3px solid #4a5568;
+      border-radius: 0 6px 6px 0;
+      font-size: 0.8rem;
+      color: #a0aec0;
+      line-height: 1.7;
+    }
+    .notes span { color: #fbd38d; font-weight: bold; }
+
+    .arrow-down {
+      text-align: center;
+      font-size: 1.6rem;
+      color: #4a5568;
+      margin: 4px 0;
+    }
+
+    hr.phase-sep {
+      border: none;
+      border-top: 1px dashed #2d3748;
+      margin: 0 0 24px 0;
+    }
+
+    .legend {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 30px;
+      justify-content: center;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      color: #a0aec0;
+    }
+    .legend-dot {
+      width: 12px; height: 12px; border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<h1>PostgreSQL Upgrade: Primary + Hot Standby Failover</h1>
+<p class="subtitle">Zero-downtime major version upgrade using streaming replication &amp; failover promotion</p>
+
+<!-- PHASE 0 -->
+<div class="phase">
+  <div class="phase-label">Phase 0</div>
+  <h2>Normal Operation — Both Servers Running Same Version</h2>
+  <div class="nodes">
+
+    <div class="clients">
+      <div class="role">App / Load Balancer</div>
+      <div class="name">Clients</div>
+    </div>
+
+    <div class="arrow vip">
+      <div class="line">→</div>
+      <div>writes + reads</div>
+    </div>
+
+    <div class="node primary">
+      <div class="role">Primary</div>
+      <div class="name">server-a</div>
+      <div class="version">PostgreSQL 15</div>
+      <div class="status">● Active / R+W</div>
+    </div>
+
+    <div class="arrow rep">
+      <div class="line">→</div>
+      <div>streaming replication</div>
+      <div>(synchronous or async)</div>
+    </div>
+
+    <div class="node standby">
+      <div class="role">Hot Standby</div>
+      <div class="name">server-b</div>
+      <div class="version">PostgreSQL 15</div>
+      <div class="status">● Replicating / R only</div>
+    </div>
+
+  </div>
+  <div class="notes">
+    Both nodes run the <span>same major version</span>. server-b streams WAL from server-a continuously.
+    Clients connect to server-a via a VIP or DNS name.
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- PHASE 1 -->
+<div class="phase">
+  <div class="phase-label warn">Phase 1</div>
+  <h2>Promote Standby → New Temporary Primary</h2>
+  <div class="nodes">
+
+    <div class="clients">
+      <div class="role">App / Load Balancer</div>
+      <div class="name">Clients</div>
+    </div>
+
+    <div class="arrow vip">
+      <div class="line">→</div>
+      <div>VIP / DNS</div>
+      <div>flipped to server-b</div>
+    </div>
+
+    <div class="node promoting">
+      <div class="role">⬆ Newly Promoted Primary</div>
+      <div class="name">server-b</div>
+      <div class="version">PostgreSQL 15</div>
+      <div class="status">● Active / R+W</div>
+    </div>
+
+    <div class="arrow cut">
+      <div class="line">✕</div>
+      <div>replication</div>
+      <div>cut</div>
+    </div>
+
+    <div class="node offline">
+      <div class="role">Taken Offline</div>
+      <div class="name">server-a</div>
+      <div class="version">PostgreSQL 15 → upgrading</div>
+      <div class="status">○ Stopped / Isolated</div>
+    </div>
+
+  </div>
+  <div class="notes">
+    <span>pg_ctl promote</span> or <span>pg_promote()</span> on server-b.
+    Flip your VIP or DNS entry to server-b <span>before or immediately after</span> promotion.
+    Stop server-a (or let it fall behind) so it cannot accept stale writes.
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- PHASE 2 -->
+<div class="phase">
+  <div class="phase-label warn">Phase 2</div>
+  <h2>Upgrade Old Primary (server-a) In Place</h2>
+  <div class="nodes">
+
+    <div class="clients">
+      <div class="role">App / Load Balancer</div>
+      <div class="name">Clients</div>
+    </div>
+
+    <div class="arrow vip">
+      <div class="line">→</div>
+      <div>still on server-b</div>
+    </div>
+
+    <div class="node promoting">
+      <div class="role">Temporary Primary</div>
+      <div class="name">server-b</div>
+      <div class="version">PostgreSQL 15</div>
+      <div class="status">● Active / R+W</div>
+    </div>
+
+    <div class="arrow rep" style="color:#805ad5">
+      <div class="line"> </div>
+      <div>(no replication</div>
+      <div>yet)</div>
+    </div>
+
+    <div class="node upgrading">
+      <div class="role">⚙ Upgrading</div>
+      <div class="name">server-a</div>
+      <div class="version">PG 15 → PG 16</div>
+      <div class="status">◌ pg_upgrade running</div>
+    </div>
+
+  </div>
+  <div class="notes">
+    On server-a: <span>pg_upgrade -b /usr/lib/postgresql/15/bin -B /usr/lib/postgresql/16/bin -d /data/pg15 -D /data/pg16</span>
+    <br>Use <span>--link</span> flag to avoid copying files (faster, in-place hard links).
+    No client impact — all traffic is on server-b.
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- PHASE 3 -->
+<div class="phase">
+  <div class="phase-label ok">Phase 3</div>
+  <h2>Re-establish Replication — server-a Becomes New Standby</h2>
+  <div class="nodes">
+
+    <div class="clients">
+      <div class="role">App / Load Balancer</div>
+      <div class="name">Clients</div>
+    </div>
+
+    <div class="arrow vip">
+      <div class="line">→</div>
+      <div>still on server-b</div>
+    </div>
+
+    <div class="node promoting">
+      <div class="role">Primary (temp)</div>
+      <div class="name">server-b</div>
+      <div class="version">PostgreSQL 15</div>
+      <div class="status">● Active / R+W</div>
+    </div>
+
+    <div class="arrow new-rep">
+      <div class="line">←</div>
+      <div>pg_basebackup /</div>
+      <div>streaming WAL</div>
+    </div>
+
+    <div class="node new-standby">
+      <div class="role">New Hot Standby</div>
+      <div class="name">server-a</div>
+      <div class="version">PostgreSQL 16</div>
+      <div class="status">● Replicating / R only</div>
+    </div>
+
+  </div>
+  <div class="notes">
+    <span>Note:</span> A PG16 standby <span>cannot</span> replicate from a PG15 primary via streaming WAL.
+    Use <span>pg_basebackup</span> from server-b (PG15) to seed server-a as a PG15-compatible base,
+    <span>OR</span> skip this phase and go straight to Phase 4 (upgrade server-b now).
+    If uptime is critical, consider using <span>logical replication</span> as a bridge between versions.
+  </div>
+</div>
+
+<div class="arrow-down">▼</div>
+
+<!-- PHASE 4 -->
+<div class="phase">
+  <div class="phase-label done">Phase 4</div>
+  <h2>Upgrade server-b &amp; Flip Back (Optional) — Final State</h2>
+  <div class="nodes">
+
+    <div class="clients">
+      <div class="role">App / Load Balancer</div>
+      <div class="name">Clients</div>
+    </div>
+
+    <div class="arrow vip">
+      <div class="line">→</div>
+      <div>VIP flipped back</div>
+      <div>to server-a (opt)</div>
+    </div>
+
+    <div class="node primary">
+      <div class="role">Primary</div>
+      <div class="name">server-a</div>
+      <div class="version">PostgreSQL 16</div>
+      <div class="status">● Active / R+W</div>
+    </div>
+
+    <div class="arrow rep">
+      <div class="line">→</div>
+      <div>streaming replication</div>
+    </div>
+
+    <div class="node standby">
+      <div class="role">Hot Standby</div>
+      <div class="name">server-b</div>
+      <div class="version">PostgreSQL 16</div>
+      <div class="status">● Replicating / R only</div>
+    </div>
+
+  </div>
+  <div class="notes">
+    Upgrade server-b to PG16 (<span>pg_upgrade</span>) while server-a is primary.
+    Re-establish streaming replication. Both nodes now on <span>PG16</span>.
+    Optionally flip VIP back to server-a as the canonical primary. Upgrade complete.
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#3182ce"></div> Primary / Active R+W</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#38a169"></div> Hot Standby / Replicating</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#dd6b20"></div> Promoting / Temporary Primary</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#805ad5"></div> Upgrading (pg_upgrade)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a5568"></div> Offline / Isolated</div>
+</div>
+
+</body>
+</html>
