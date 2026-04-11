@@ -50,9 +50,11 @@ RUN echo "postgres ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 RUN echo 'export PATH=/usr/lib/postgresql/15/bin:/usr/lib/postgresql/16/bin:$PATH' >> /etc/bash.bashrc \
     && echo "alias ll='ls -lgh --color=auto'" >> /etc/bash.bashrc \
     && echo "alias check='bash /scripts/check_status.sh'" >> /etc/bash.bashrc \
+    && echo "alias ver='sudo -u postgres psql -U postgres -t -d demo_shop -c \"SELECT version();\"'" >> /etc/bash.bashrc \
     && mkdir -p /var/lib/postgresql \
     && echo "alias ll='ls -lgh --color=auto'" >> /var/lib/postgresql/.bashrc \
     && echo "alias check='bash /scripts/check_status.sh'" >> /var/lib/postgresql/.bashrc \
+    && echo "alias ver='sudo -u postgres psql -U postgres -t -d demo_shop -c \"SELECT version();\"'" >> /var/lib/postgresql/.bashrc \
     && chown postgres:postgres /var/lib/postgresql/.bashrc
 
 COPY entrypoint.sh /entrypoint.sh
