@@ -10,7 +10,7 @@ services:
       POSTGRES_PASSWORD: postgres
     volumes:
       - ./config:/config
-      - ./scripts:/scripts
+      - ./scripts:/scripts   # Host scripts mounted into primary container
       - primary_data:/var/lib/postgresql
     ports:
       - "5450:5432"   # PostgreSQL
@@ -34,7 +34,7 @@ services:
       PRIMARY_HOST: pg-primary
       REPL_PASSWORD: replicator
     volumes:
-      - ./scripts:/scripts
+      - ./scripts:/scripts   # Host scripts mounted into standby container
       - standby_data:/var/lib/postgresql
     ports:
       - "5433:5432"   # PostgreSQL (read-only)

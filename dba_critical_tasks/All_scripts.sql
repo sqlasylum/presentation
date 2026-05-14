@@ -28,6 +28,7 @@ order by 5,1 desc, 1 desc;
 
 
 
+
 --lead blocker query
 select pid,
        usename,
@@ -66,6 +67,8 @@ SELECT (clock_timestamp() - a.xact_start)::interval(3) AS transaction_age, a.app
 FROM tree JOIN pg_stat_activity a USING (pid)
 ORDER BY tree.path;
 
+select pg_cancel_backend(25);
+
 
 
 --check Connections 
@@ -84,6 +87,7 @@ from pg_stat_activity join pg_roles on usename = rolname
 where usename <> 'rdsadmin' 
 group by grouping sets ((usename), ())
 order by rolconnlimit desc, usename;
+
 
 
 -- Show tables with vacuum stats and time since last vacuum
