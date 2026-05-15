@@ -1,0 +1,28 @@
+# Sample pgBackRest configuration for multiple PostgreSQL servers.
+# Copy to /etc/pgbackrest/pgbackrest.conf and update values.
+
+[global]
+repo1-path=/mnt/data/backups/pgbackrest
+repo1-retention-full=7
+repo1-retention-diff=14
+start-fast=y
+process-max=4
+log-level-console=info
+
+# Server on localhost:5450
+[db5450]
+pg1-path=/var/lib/postgresql/5450/data
+pg1-host=127.0.0.1
+pg1-port=5450
+pg1-user=postgres
+
+# Server on localhost:5433
+[db5433]
+pg1-path=/var/lib/postgresql/5433/data
+pg1-host=127.0.0.1
+pg1-port=5433
+pg1-user=postgres
+
+# To add more servers in future:
+# 1) Add a new stanza like [db5440] here with pg1-path/pg1-host/pg1-port/pg1-user.
+# 2) Add "db5440" to the STANZAS array in pgbackrest_multi_nightly.sh.
