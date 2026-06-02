@@ -136,6 +136,7 @@ Created automatically on first startup. Contains three related tables:
 | `watch_replication.sh` | Primary | Live `watch` view of WAL lag and replication sender stats |
 | `promote_standby.sh` | Standby | Promote standby → primary (Phase 1 of upgrade) |
 | `upgrade_to_pg16.sh` | Old primary | Run `pg_upgrade` PG15 → PG16 with `--link` mode (Phase 2) |
+| `analyze_all_tables.sh` | Upgraded node | Run post-upgrade `ANALYZE` on all databases/tables to refresh planner stats |
 | `rebuild_standby.sh` | Standby | Re-seed from upgraded primary and restart as PG16 hot standby (Phase 3) |
 | `row_check.sh` | Standby | `watch`-based live view of the latest orders — confirms rows are arriving via replication |
 
@@ -185,6 +186,9 @@ App connections / VIP should now point to **pg-standby (port 5433)**.
 # On pg-primary (the now-idle original primary)
 bash /scripts/upgrade_to_pg16.sh
 # Runs: initdb PG16 → pg_upgrade --link → starts PG16
+
+# Still on upgraded node — refresh optimizer statistics
+bash /scripts/analyze_all_tables.sh
 ```
 
 ### Phase 3 — Re-establish replication on PG16
@@ -231,6 +235,7 @@ Optionally flip the VIP / DNS back to pg-primary and go through the same promoti
 │   ├── watch_replication.sh     # Live WAL lag monitor (run on primary)
 │   ├── promote_standby.sh       # Promote this node to primary
 │   ├── upgrade_to_pg16.sh       # pg_upgrade PG15 → PG16 on old primary
+│   ├── analyze_all_tables.sh    # post-upgrade analyze across all databases
 │   ├── rebuild_standby.sh       # Re-establish PG16 standby after upgrade
 │   ├── row_check.sh             # watch-based live order view (run on standby)
 │   └── bash_profile_add.sh      # alias definitions (source inside container)
