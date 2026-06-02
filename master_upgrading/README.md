@@ -119,6 +119,7 @@ Created automatically on first startup. Contains three related tables:
 | `promote_standby.sh` | Standby | Promote standby → primary (Phase 1 of upgrade) |
 | `upgrade_to_pg16.sh` | Old primary | Run `pg_upgrade` PG15 → PG16 with `--link` mode (Phase 2) |
 | `rebuild_standby.sh` | Standby | Re-seed from upgraded primary and restart as PG16 hot standby (Phase 3) |
+| `row_check.sh` | Standby | `watch`-based live view of the latest orders — confirms rows are arriving via replication |
 
 Run any script with:
 ```bash
@@ -141,8 +142,7 @@ bash /scripts/check_status.sh
 bash /scripts/live_inserts.sh
 
 # On standby — confirm rows are arriving
-watch -n 2 "psql -U postgres -d demo_shop -c \
-  'SELECT id, status, ordered_at FROM orders ORDER BY ordered_at DESC LIMIT 5;'"
+bash /scripts/row_check.sh
 
 # On primary — watch WAL lag
 bash /scripts/watch_replication.sh
@@ -212,7 +212,9 @@ Optionally flip the VIP / DNS back to pg-primary and go through the same promoti
 │   ├── watch_replication.sh     # Live WAL lag monitor (run on primary)
 │   ├── promote_standby.sh       # Promote this node to primary
 │   ├── upgrade_to_pg16.sh       # pg_upgrade PG15 → PG16 on old primary
-│   └── rebuild_standby.sh       # Re-establish PG16 standby after upgrade
+│   ├── rebuild_standby.sh       # Re-establish PG16 standby after upgrade
+│   ├── row_check.sh             # watch-based live order view (run on standby)
+│   └── bash_profile_add.sh      # alias definitions (source inside container)
 │
 ├── demo_script.md               # Step-by-step presenter walkthrough
 └── pg_upgrade_diagram.html      # Visual diagram of the upgrade phases (open in browser)
