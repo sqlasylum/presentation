@@ -26,8 +26,8 @@ while true; do
         (ARRAY['pending','processing','shipped','completed'])[floor(random()*4+1)::int]
       RETURNING id, customer_id, product_id, quantity, total, status
     )
-    SELECT format('  Order #%s | customer_id=%s product_id=%s qty=%s total=\$%s  [%s]',
-                  id, customer_id, product_id, quantity, total, status)
+    SELECT format('  port=%s | Order #%s | customer_id=%s product_id=%s qty=%s total=\$%s  [%s]',
+                  current_setting('port'), id, customer_id, product_id, quantity, total, status)
     FROM new_order;
   " 2>&1)
 

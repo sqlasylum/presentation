@@ -85,6 +85,24 @@ psql -h localhost -p 5432 -U postgres demo_shop
 psql -h localhost -p 5433 -U postgres demo_shop
 ```
 
+### Host-side insert driver (for failover demos)
+
+Use the host helper script to target either side explicitly by role/port and keep inserting while you promote/repoint:
+
+```bash
+# Target current primary (default mapped port 5450)
+./host_live_inserts.sh primary
+
+# Target secondary/standby side (default mapped port 5433)
+./host_live_inserts.sh secondary
+```
+
+Optional interval:
+
+```bash
+./host_live_inserts.sh primary 1
+```
+
 ---
 
 ## Credentials
@@ -200,6 +218,7 @@ Optionally flip the VIP / DNS back to pg-primary and go through the same promoti
 ├── Dockerfile                   # Ubuntu + PG15 + PG16 binaries + SSH
 ├── docker-compose.yml           # Primary and standby services
 ├── entrypoint.sh                # Container startup logic (primary vs standby)
+├── host_live_inserts.sh         # Host-side insert loop with primary/secondary target
 │
 ├── config/
 │   ├── postgresql.conf          # Replication-ready server config (primary)
