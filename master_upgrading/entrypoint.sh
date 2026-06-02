@@ -24,12 +24,23 @@ setup_demo_shell_env() {
   if [ -f /scripts/bash_profile_add.sh ]; then
     local SOURCE_LINE="[ -f /scripts/bash_profile_add.sh ] && source /scripts/bash_profile_add.sh"
 
+    touch /etc/bash.bashrc
+    grep -qxF "$SOURCE_LINE" /etc/bash.bashrc || echo "$SOURCE_LINE" >> /etc/bash.bashrc
+
     touch /root/.bashrc
     grep -qxF "$SOURCE_LINE" /root/.bashrc || echo "$SOURCE_LINE" >> /root/.bashrc
 
+    touch /root/.profile
+    grep -qxF "$SOURCE_LINE" /root/.profile || echo "$SOURCE_LINE" >> /root/.profile
+
     touch /var/lib/postgresql/.bashrc
     grep -qxF "$SOURCE_LINE" /var/lib/postgresql/.bashrc || echo "$SOURCE_LINE" >> /var/lib/postgresql/.bashrc
+
+    touch /var/lib/postgresql/.profile
+    grep -qxF "$SOURCE_LINE" /var/lib/postgresql/.profile || echo "$SOURCE_LINE" >> /var/lib/postgresql/.profile
+
     chown postgres:postgres /var/lib/postgresql/.bashrc
+    chown postgres:postgres /var/lib/postgresql/.profile
   fi
 }
 
