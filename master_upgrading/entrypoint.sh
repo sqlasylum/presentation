@@ -14,8 +14,28 @@ banner() {
   echo ""
 }
 
+setup_demo_shell_env() {
+  # /scripts is bind-mounted, so normalize script execute bits on every start.
+  if [ -d /scripts ]; then
+    chmod +x /scripts/*.sh 2>/dev/null || true
+  fi
+
+  # Load demo aliases automatically for interactive shells.
+  if [ -f /scripts/bash_profile_add.sh ]; then
+    local SOURCE_LINE="[ -f /scripts/bash_profile_add.sh ] && source /scripts/bash_profile_add.sh"
+
+    touch /root/.bashrc
+    grep -qxF "$SOURCE_LINE" /root/.bashrc || echo "$SOURCE_LINE" >> /root/.bashrc
+
+    touch /var/lib/postgresql/.bashrc
+    grep -qxF "$SOURCE_LINE" /var/lib/postgresql/.bashrc || echo "$SOURCE_LINE" >> /var/lib/postgresql/.bashrc
+    chown postgres:postgres /var/lib/postgresql/.bashrc
+  fi
+}
+
 # ── Always start SSH ──────────────────────────────────────
 service ssh start
+setup_demo_shell_env
 echo "[entrypoint] SSH started — connect with: ssh -p 2222 postgres@localhost"
 
 # ── PRIMARY ───────────────────────────────────────────────
