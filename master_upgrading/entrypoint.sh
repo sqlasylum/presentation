@@ -53,8 +53,13 @@ echo "[entrypoint] SSH started — connect with: ssh -p 2222 postgres@localhost"
 if [ "$PG_ROLE" = "primary" ]; then
   banner "Starting as PRIMARY (PostgreSQL $PG_VERSION)"
 
-  if [ ! -f "$PGDATA/PG_VERSION" ]; then
+  if [ ! -f "$PGDATA/PG_VERSION" ] || [ ! -f "$PGDATA/global/pg_control" ]; then
+    if [ -f "$PGDATA/PG_VERSION" ] && [ ! -f "$PGDATA/global/pg_control" ]; then
+      echo "[primary] Existing cluster is incomplete; rebuilding from scratch."
+    fi
+
     echo "[primary] Initializing data directory: $PGDATA"
+    rm -rf "$PGDATA"
     mkdir -p "$PGDATA"
     chown postgres:postgres "$PGDATA"
     sudo -u $PGUSER $PG_BIN/initdb -D "$PGDATA" --encoding=UTF8 --locale=en_US.UTF-8 -A trust

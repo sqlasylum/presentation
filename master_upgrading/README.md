@@ -75,6 +75,8 @@ ssh -p 2222 postgres@localhost
 ssh -p 2223 postgres@localhost
 ```
 
+If the primary volume is present but the PostgreSQL cluster is incomplete, the container will rebuild that data directory from scratch on startup.
+
 ### Connect via psql (from host)
 
 ```bash
