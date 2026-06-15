@@ -49,6 +49,10 @@ Presentation focus: Steps you need to take to move from on Premise to the cloud 
 What is inside:
 - Presentation files from the Webinar related to cloud migration. 
 
+Link to file 
+- [db_migrations_to_cloud.pdf](db_migrations_to_cloud.pdf)
+
+
 
 ## Root-Level Utilities
 
