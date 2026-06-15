@@ -41,6 +41,15 @@ Good starting points:
 - [master_upgrading/demo_script.md](master_upgrading/demo_script.md)
 - [master_upgrading/scripts/upgrade_to_pg16.sh](master_upgrading/scripts/upgrade_to_pg16.sh)
 
+
+### DB Migrations to the Cloud/
+
+Presentation focus: Steps you need to take to move from on Premise to the cloud for your Database. 
+
+What is inside:
+- Presentation files from the Webinar related to cloud migration. 
+
+
 ## Root-Level Utilities
 
 - [run_dba_task.sh](run_dba_task.sh): helper script that runs any SQL file in [dba_critical_tasks/](dba_critical_tasks/) with standard `psql` flags.
