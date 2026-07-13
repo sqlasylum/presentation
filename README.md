@@ -42,6 +42,21 @@ Good starting points:
 - [master_upgrading/scripts/upgrade_to_pg16.sh](master_upgrading/scripts/upgrade_to_pg16.sh)
 
 
+### master_ai_prompts/
+
+Presentation focus: AI-assisted load testing and query performance analysis for PostgreSQL.
+
+What is inside:
+- Python-based load generator built with AI tooling for simulating realistic PostgreSQL workloads
+- Configurable profiles for mixed read/write, read-heavy, and custom workloads
+- `pg_stat_statements` setup and query scripts for capturing and analyzing slow queries during load runs
+- Setup guides and reset scripts for the statistics extension
+
+Good starting points:
+- [master_ai_prompts/README.md](master_ai_prompts/README.md)
+- [master_ai_prompts/load_generator.py](master_ai_prompts/load_generator.py)
+- [master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md](master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md)
+
 ### DB Migrations to the Cloud/
 
 Presentation focus: Steps you need to take to move from on Premise to the cloud for your Database. 
@@ -69,12 +84,14 @@ Example:
 1. Read [dba_critical_tasks/backups/README.md](dba_critical_tasks/backups/README.md) to understand backup options and script intent.
 2. Run one or two lightweight health checks from [dba_critical_tasks/](dba_critical_tasks/) using [run_dba_task.sh](run_dba_task.sh).
 3. If you are interested in upgrades, launch the Docker demo in [master_upgrading/](master_upgrading/) and follow [master_upgrading/demo_script.md](master_upgrading/demo_script.md).
+4. To simulate load and analyze query performance, follow [master_ai_prompts/README.md](master_ai_prompts/README.md) to set up and run the load generator.
 
 ## Prerequisites
 
 - PostgreSQL client tools (`psql`) for SQL task scripts
 - Bash shell environment
 - Docker Desktop or Rancher Desktop for the upgrade demo in [master_upgrading/](master_upgrading/)
+- Python 3 and `pip` for the load testing tool in [master_ai_prompts/](master_ai_prompts/)
 
 ## Notes
 
