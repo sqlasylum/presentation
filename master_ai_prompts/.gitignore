@@ -1,0 +1,29 @@
+# Ignore Log files
+*.log 
+logs/*
+
+# Ignore Mac DS_Store files
+.DS_Store
+
+#My custom notes
+*.note
+*.pgpass
+
+IDE Files 
+*.idea/
+*.vscode/
+*.iml
+
+#Enviro Keys
+*.env
+*.pem
+*.key
+credentials.json
+
+#OS Items
+.DS_Store
+Thumbs.db
+
+#Personal 
+*.note
+
