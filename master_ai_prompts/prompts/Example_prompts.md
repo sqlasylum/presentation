@@ -15,6 +15,7 @@
 - Create a script that validates all the tables are created.
 - Make sure to return the output of the procedure so I can review and validate the data.
 - Create a simple script that can test the performance of the system by calling the functions frequently.
+- I need to run this code with a minimal security, try and run this code with little to no permissions for the Database or system. 
 
 ---
 
