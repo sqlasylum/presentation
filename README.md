@@ -56,6 +56,7 @@ Good starting points:
 - [master_ai_prompts/README.md](master_ai_prompts/README.md)
 - [master_ai_prompts/load_generator.py](master_ai_prompts/load_generator.py)
 - [master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md](master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md)
+- [LoadTesterWithAiPrompts.pdf](LoadTesterWithAiPrompts.pdf) for the companion presentation deck
 
 ### DB Migrations to the Cloud/
 
