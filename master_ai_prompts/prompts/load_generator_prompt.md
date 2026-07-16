@@ -1,22 +1,21 @@
 # Prompt: PostgreSQL Load Generator
 
 ## Task
-Create a Python script called `load_generator.py` that generates configurable load against a PostgreSQL database using concurrent threads. The script is used to produce realistic query traffic for observability and performance testing purposes (e.g., populating `pg_stat_statements`).
-
+Create a Python script called `load_generator.py` that generates configurable load against a PostgreSQL database using concurrent threads. The script is used to produce realistic query traffic for observability and performance testing purposes (e.g., populating `pg_stat_statements`). make sure you provide examples after this is setup on how to run this on the command line. 
 ---
 
 ## Dependencies
 - `psycopg` (psycopg3, `psycopg[binary]>=3.1.0`) — PostgreSQL driver
 - `python-dotenv==1.0.0` — load database credentials from a `.env` file
 - Standard library: `time`, `random`, `threading`, `os`, `datetime`, `argparse`
-
+- make sure this app runs in a virtual python environment and make sure that is setup before this is complete. 
 ---
 
 ## Database Configuration
 - Read connection parameters from environment variables using `python-dotenv`.
 - Variables: `DB_HOST` (default `localhost`), `DB_PORT` (default `5433`), `DB_NAME` (default `bluebox`), `DB_USER` (default `postgres`), `DB_PASSWORD` (default empty string).
 - Store these in a `DB_CONFIG` dict.
-
+- Make sure to provide a different application name for the configuration so it's easy to see this as "loadtester"
 ---
 
 ## Load Profiles
