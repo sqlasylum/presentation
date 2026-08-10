@@ -1,4 +1,4 @@
-select coalesce(usename, 'total') as usename
+select coalesce(usename, 'total') as usename,application_name
 , case when grouping(usename) = 1 then -2 else max (rolconnlimit) end as rolconnlimit
 , string_agg(distinct case when state = 'idle in transaction' then 'iit' else state end, '/') as session_state
 , sum(case when state = 'active' then 1 else 0 end) as act_count
@@ -11,5 +11,5 @@ select coalesce(usename, 'total') as usename
 	|| case when grouping(usename) = 1 or max(rolconnlimit) = -1 then ' used' else ' left' end as "conn_left/used"
 from pg_stat_activity join pg_roles on usename = rolname 
 where usename <> 'rdsadmin' 
-group by grouping sets ((usename), ())
+group by grouping sets ((usename, application_name), ())
 order by rolconnlimit desc, usename;

@@ -27,6 +27,23 @@ group by 2,3,4,5
 order by 5,1 desc, 1 desc;
 
 
+--check Connections 
+select coalesce(usename, 'total') as usename
+, case when grouping(usename) = 1 then -2 else max (rolconnlimit) end as rolconnlimit
+, string_agg(distinct case when state = 'idle in transaction' then 'iit' else state end, '/') as session_state
+, sum(case when state = 'active' then 1 else 0 end) as act_count
+, sum(case when state = 'idle' then 1 else 0 end) as idl_count
+, sum(case when state = 'idle in transaction' then 1 else 0 end) as iit_count
+, abs(case when max(rolconnlimit) = -1 or grouping(usename) = 1 then 0 else max(rolconnlimit) end
+	- (sum(case when state = 'active' then 1 else 0 end)
+	+ sum(case when state = 'idle' then 1 else 0 end) 
+	+ sum(case when state = 'idle in transaction' then 1 else 0 end)))::text
+	|| case when grouping(usename) = 1 or max(rolconnlimit) = -1 then ' used' else ' left' end as "conn_left/used"
+from pg_stat_activity join pg_roles on usename = rolname 
+where usename <> 'rdsadmin' 
+group by grouping sets ((usename), ())
+order by rolconnlimit desc, usename;
+
 
 
 --lead blocker query
@@ -67,26 +84,12 @@ SELECT (clock_timestamp() - a.xact_start)::interval(3) AS transaction_age, a.app
 FROM tree JOIN pg_stat_activity a USING (pid)
 ORDER BY tree.path;
 
+
 select pg_cancel_backend(25);
+select pg_terminate_backend(25);
 
 
 
---check Connections 
-select coalesce(usename, 'total') as usename
-, case when grouping(usename) = 1 then -2 else max (rolconnlimit) end as rolconnlimit
-, string_agg(distinct case when state = 'idle in transaction' then 'iit' else state end, '/') as session_state
-, sum(case when state = 'active' then 1 else 0 end) as act_count
-, sum(case when state = 'idle' then 1 else 0 end) as idl_count
-, sum(case when state = 'idle in transaction' then 1 else 0 end) as iit_count
-, abs(case when max(rolconnlimit) = -1 or grouping(usename) = 1 then 0 else max(rolconnlimit) end
-	- (sum(case when state = 'active' then 1 else 0 end)
-	+ sum(case when state = 'idle' then 1 else 0 end) 
-	+ sum(case when state = 'idle in transaction' then 1 else 0 end)))::text
-	|| case when grouping(usename) = 1 or max(rolconnlimit) = -1 then ' used' else ' left' end as "conn_left/used"
-from pg_stat_activity join pg_roles on usename = rolname 
-where usename <> 'rdsadmin' 
-group by grouping sets ((usename), ())
-order by rolconnlimit desc, usename;
 
 
 
