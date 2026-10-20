@@ -1,0 +1,212 @@
+# ===========================================
+# Bluebox Docker Compose
+# ===========================================
+# A sample PostgreSQL database with realistic, continuously-updating data
+#
+# Quick start:
+#   docker compose up -d
+#
+# Use a different PostgreSQL version:
+#   PG_VERSION=16 docker compose up -d
+#
+# Use a different port:
+#   PG_PORT=5433 docker compose up -d
+#
+# Combine options:
+#   PG_VERSION=16 PG_PORT=5433 docker compose up -d
+#
+# Connections:
+#   Admin:  psql -h localhost -p <port> -U bb_admin -d bluebox  (password: admin_password)
+#   App:    psql -h localhost -p <port> -U bb_app -d bluebox    (password: app_password)
+#   Super:  psql -h localhost -p <port> -U postgres -d bluebox  (password: password)
+
+services:
+  postgres:
+    image: ${BLUEBOX_IMAGE:-ghcr.io/ryanbooz/bluebox-postgres}:${PG_VERSION:-18}
+    #   BLUEBOX_IMAGE=bluebox docker compose up -d
+    container_name: ${BLUEBOX_CONTAINER_NAME:-bluebox-${PG_VERSION:-18}}
+    environment:
+      # Superuser (for pg_cron, emergencies only)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      PGDATA: /var/lib/postgresql/data
+      PGUSER: postgres
+      # These are created by init scripts:
+      # bb_admin / admin_password  - schema owner, DDL
+      # bb_app / app_password      - application queries, DML
+    shm_size: "1gb"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "${HOST_IP:-0.0.0.0}:${PG_PORT:-5432}:5432"
+      - "${HOST_IP:-0.0.0.0}:5999:22"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_preload_libraries=pg_stat_statements,auto_explain,pg_cron"
+      - "-c"
+      - "cron.database_name=postgres"
+      - "-c"
+      - "shared_buffers=2GB"
+      - "-c"
+      - "effective_cache_size=6GB"
+      - "-c"
+      - "maintenance_work_mem=1GB"
+      - "-c"
+      - "work_mem=8MB"
+      - "-c"
+      - "max_parallel_workers_per_gather=2"
+      - "-c"
+      - "auto_explain.log_min_duration=500ms"
+      - "-c"
+      - "auto_explain.log_analyze=on"
+      - "-c"
+      - "auto_explain.log_verbose=on"
+      - "-c"
+      - "auto_explain.log_buffers=on"
+      - "-c"
+      - "auto_explain.log_timing=on"
+      - "-c"
+      - "auto_explain.log_triggers=on"
+      - "-c"
+      - "auto_explain.log_nested_statements=on"
+      - "-c"
+      - "auto_explain.log_format=json"
+      - "-c"
+      - "pg_stat_statements.max=5000"
+      - "-c"
+      - "pg_stat_statements.track=all"
+    networks:
+      - bouncer
+      - rgm-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U postgres -d bluebox"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5m
+
+  # ── Bluebox Web App ────────────────────────────────────────────────────────
+  # Build + start:  docker compose up --build -d bluebox-app
+  # Open:           http://localhost:3000  (app)  /  http://localhost:3001  (Grafana)
+  # Set BLUEBOX_DB_HOST if your postgres container has a different name.
+  bluebox-app:
+    build:
+      context: ./bluebox-app
+    container_name: bluebox-app
+    restart: unless-stopped
+    env_file: ./bluebox-app/.env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${APP_PORT:-3000}:3000"
+      - "${GRAFANA_PORT:-3001}:3001"
+    environment:
+      PGHOST:         ${BLUEBOX_DB_HOST:-bluebox-18}
+      PGPORT:         ${BLUEBOX_DB_PORT:-5432}
+      PGDATABASE:     ${BLUEBOX_DB_NAME:-bluebox}
+      PGUSER:         ${BLUEBOX_DB_USER:-bb_app}
+      PGPASSWORD:     ${BLUEBOX_DB_PASSWORD:-app_password}
+      SESSION_SECRET: ${SESSION_SECRET:-bluebox-demo-secret-change-me}
+      PORT:           "3000"
+      GF_SECURITY_ADMIN_USER:     ${GF_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:-p@ssword}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - bouncer
+
+  # ── Node Exporter ────────────────────────────────────────────────────────────
+  # True host-level metrics (per-mode CPU, load average, memory/swap) for the
+  # "Host CPU / Memory" dashboard panels. cAdvisor only has per-container
+  # totals, not this breakdown, so a separate exporter is needed.
+  node-exporter:
+    image: quay.io/prometheus/node-exporter:v1.8.2
+    container_name: bluebox-node-exporter
+    restart: unless-stopped
+    pid: host
+    command:
+      - "--path.rootfs=/host"
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - bouncer
+
+  # ── Postgres Exporter ──────────────────────────────────────────────────────
+  # Scraped by Prometheus below; feeds the bundled PostgreSQL Grafana dashboard.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
+    container_name: bluebox-postgres-exporter
+    restart: unless-stopped
+    command:
+      - "--collector.postmaster"
+      - "--collector.stat_checkpointer"
+      - "--collector.stat_statements"
+      - "--collector.stat_activity_autovacuum"
+      - "--collector.database_wraparound"
+      - "--collector.long_running_transactions"
+      - "--collector.process_idle"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${BLUEBOX_DB_ADMIN_USER:-bb_admin}:${BLUEBOX_DB_ADMIN_PASSWORD:-admin_password}@${BLUEBOX_DB_HOST:-bluebox-18}:${BLUEBOX_DB_PORT:-5432}/${BLUEBOX_DB_NAME:-bluebox}?sslmode=disable"
+    networks:
+      - bouncer
+
+  # ── cAdvisor ────────────────────────────────────────────────────────────────
+  # Per-container CPU/memory metrics. Needs docker.sock (read-only) so it can
+  # query the Docker API for the storage driver (Rancher Desktop uses the
+  # containerd snapshotter, reported as driver=overlayfs); without docker.sock
+  # cAdvisor mis-detects the driver and falls back to a legacy overlay2 layer
+  # lookup that doesn't exist on this layout, producing zero container metrics.
+  cadvisor:
+    image: ghcr.io/google/cadvisor:v0.60.6
+    container_name: bluebox-cadvisor
+    restart: unless-stopped
+    command:
+      - "--containerd=/run/docker/containerd/containerd.sock"
+      - "--containerd-namespace=moby"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /run/docker/containerd/containerd.sock:/run/docker/containerd/containerd.sock:ro
+    networks:
+      - bouncer
+
+  # ── Prometheus ────────────────────────────────────────────────────────
+  # Open: http://localhost:9090
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    container_name: bluebox-prometheus
+    restart: unless-stopped
+    depends_on:
+      - postgres-exporter
+      - cadvisor
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/rules.yml:/etc/prometheus/rules.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    networks:
+      - bouncer
+
+volumes:
+  pgdata:
+    name: ${BLUEBOX_VOLUME_NAME:-bluebox-pgdata-${PG_VERSION:-18}}
+  grafana-data:
+    name: ${GRAFANA_VOLUME_NAME:-bluebox-grafana-data}
+  prometheus-data:
+    name: ${PROMETHEUS_VOLUME_NAME:-bluebox-prometheus-data}
+
+networks:
+  bouncer:
+    name: bouncer
+    external: true
+  rgm-network:
+    name: rgm-network
+    external: true
+  bluebox-docker:
+    name: bluebox-docker
+    external: true
+  

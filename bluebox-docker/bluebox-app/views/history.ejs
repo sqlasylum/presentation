@@ -1,0 +1,89 @@
+<%- include('partials/header', { title: 'My Rentals', page: 'history' }) %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="text-white mb-0"><i class="bi bi-clock-history me-2"></i>My Rentals</h4>
+  <a href="/reports" class="btn btn-sm btn-outline-secondary"><i class="bi bi-bar-chart-line me-1"></i>Reports</a>
+</div>
+
+<!-- Summary stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h3 text-white mb-0"><%= stats.total_rentals %></div>
+      <small class="text-muted">Total Rentals</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h3 mb-0" style="color:#52b788"><%= stats.open_rentals %></div>
+      <small class="text-muted">Currently Out</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h3 text-white mb-0"><%= stats.completed_rentals %></div>
+      <small class="text-muted">Returned</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h3 mb-0" style="color:#f4a261">$<%= parseFloat(stats.total_spent).toFixed(2) %></div>
+      <small class="text-muted">Total Spent</small>
+    </div>
+  </div>
+</div>
+
+<!-- Rental table -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table table-dark table-hover mb-0" style="font-size:.87rem">
+      <thead>
+        <tr style="color:#666;font-size:.75rem;text-transform:uppercase;letter-spacing:.05em">
+          <th class="ps-3">Film</th>
+          <th>Rented</th>
+          <th>Returned</th>
+          <th class="d-none d-md-table-cell">Location</th>
+          <th>Paid</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (rentals.length === 0) { %>
+        <tr>
+          <td colspan="6" class="text-center text-muted py-5">
+            No rentals yet. <a href="/" style="color:var(--bb-blue)">Browse the catalog.</a>
+          </td>
+        </tr>
+        <% } %>
+        <% rentals.forEach(r => { %>
+        <tr>
+          <td class="ps-3">
+            <a href="/film/<%= r.film_id %>" class="text-decoration-none" style="color:#d0d0e0">
+              <span class="fw-semibold"><%= r.title %></span>
+            </a>
+            <% if (r.rating) { %><span class="badge bg-secondary ms-1" style="font-size:.6rem"><%= r.rating %></span><% } %>
+          </td>
+          <td class="text-muted">
+            <%= new Date(r.rented_at).toLocaleDateString() %><br>
+            <span style="font-size:.75rem"><%= new Date(r.rented_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) %></span>
+          </td>
+          <td class="text-muted"><%= r.returned_at ? new Date(r.returned_at).toLocaleDateString() : '—' %></td>
+          <td class="text-muted d-none d-md-table-cell" style="font-size:.8rem">
+            <%= (r.store_city && r.store_state) ? `${r.store_city}, ${r.store_state}` : '—' %>
+          </td>
+          <td class="text-muted"><%= r.amount ? `$${parseFloat(r.amount).toFixed(2)}` : '—' %></td>
+          <td>
+            <% if (r.is_open) { %>
+            <span class="badge" style="background:#0d2e1a;color:#52b788">Out</span>
+            <% } else { %>
+            <span class="badge" style="background:#1a1a38;color:#666">Returned</span>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

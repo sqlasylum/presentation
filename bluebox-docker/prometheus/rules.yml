@@ -1,0 +1,76 @@
+groups:
+  - name: bluebox_container_stats
+    rules:
+      # Aliases for cAdvisor container metrics into the pg_system_* metric
+      # names the bundled PostgreSQL dashboard's "Process Group CPU/Memory"
+      # panels expect, scoped to the bluebox-18 Postgres container.
+      - record: pg_system_cpu_cores
+        expr: machine_cpu_cores{job="cadvisor"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_process_group_cpu_seconds_total
+        expr: container_cpu_usage_seconds_total{name="bluebox-18"}
+        labels:
+          group: postgres
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_process_group_memory_bytes
+        expr: container_memory_working_set_bytes{name="bluebox-18"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      # Aliases for node-exporter host-level metrics into the pg_system_*
+      # names the dashboard's "Host CPU / Memory" panels expect. This is the
+      # whole Rancher Desktop VM's usage, not just the bluebox-18 container,
+      # but it's labeled to match the dashboard's $job/$instance selector.
+      - record: pg_system_cpu_seconds_total
+        expr: node_cpu_seconds_total{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_load1
+        expr: node_load1{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_load5
+        expr: node_load5{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_load15
+        expr: node_load15{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_memory_total_bytes
+        expr: node_memory_MemTotal_bytes{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_memory_available_bytes
+        expr: node_memory_MemAvailable_bytes{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_memory_used_bytes
+        expr: node_memory_MemTotal_bytes{job="node-exporter"} - node_memory_MemAvailable_bytes{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18
+
+      - record: pg_system_swap_used_bytes
+        expr: node_memory_SwapTotal_bytes{job="node-exporter"} - node_memory_SwapFree_bytes{job="node-exporter"}
+        labels:
+          job: postgres
+          instance: bluebox-18

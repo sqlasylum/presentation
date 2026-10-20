@@ -1,0 +1,32 @@
+<%- include('partials/header', { title: 'Sign In', page: '' }) %>
+
+<div class="row justify-content-center mt-4">
+  <div class="col-md-5 col-lg-4">
+    <div class="card p-4">
+      <h4 class="text-white mb-1"><i class="bi bi-collection-play-fill me-2" style="color:var(--bb-blue)"></i>Sign In</h4>
+      <p class="text-muted small mb-4">No password needed — name and email only.</p>
+
+      <% if (error) { %>
+      <div class="alert py-2 mb-3" style="background:#0a1a2a;border-color:#1a73e8;color:#a5c8f8;font-size:.9rem">
+        <i class="bi bi-exclamation-circle me-2"></i><%= error %>
+      </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST">
+        <input type="hidden" name="redirect" value="<%= redirect %>">
+        <div class="mb-3">
+          <label class="form-label text-muted small">Full Name</label>
+          <input type="text" name="full_name" class="form-control" placeholder="Jane Smith" required autofocus>
+        </div>
+        <div class="mb-4">
+          <label class="form-label text-muted small">Email Address</label>
+          <input type="email" name="email" class="form-control" placeholder="jane@example.com" required>
+          <div class="form-text text-muted" style="font-size:.75rem">Used to find your account and rental history.</div>
+        </div>
+        <button type="submit" class="btn btn-bb w-100">Continue</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

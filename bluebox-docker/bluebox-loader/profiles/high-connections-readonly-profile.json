@@ -1,0 +1,28 @@
+{
+  "service_name": "high-connections-readonly",
+  "db": {
+    "host": "${BLUEBOX_DB_HOST:-host.docker.internal}",
+    "port": "${BLUEBOX_DB_PORT:-5432}",
+    "dbname": "${BLUEBOX_DB_NAME:-bluebox}",
+    "user": "${BLUEBOX_DB_USER:-bb_app}",
+    "password": "${BLUEBOX_DB_PASSWORD}",
+    "sslmode": "${BLUEBOX_DB_SSLMODE:-prefer}",
+    "connect_timeout": "${BLUEBOX_DB_CONNECT_TIMEOUT:-10}"
+  },
+  "workload": {
+    "sessions": 1000000,
+    "threads": 100,
+    "delay_ms": 25000,
+    "max_runtime_minutes": 30
+  },
+  "operation_weights": {
+    "insert_order": 0,
+    "update_order": 0,
+    "run_report": 100,
+    "force_deadlock": 0,
+    "idle_in_transaction": 0
+  },
+  "report": {
+    "report_name": "order_lookup"
+  }
+}

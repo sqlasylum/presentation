@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title + ' — ' : '' %>Bluebox</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root {
+      --bb-blue:  #1a73e8;
+      --bb-dark:  #0d0d1a;
+      --bb-card:  #141425;
+      --bb-nav:   #0a0a18;
+      --bb-border:#2a2a45;
+    }
+    body                  { background: var(--bb-dark); color: #d0d0e0; min-height: 100vh; }
+    .navbar               { background: var(--bb-nav) !important; border-bottom: 1px solid var(--bb-border); }
+    .navbar-brand         { color: var(--bb-blue) !important; font-weight: 900; font-size: 1.4rem; letter-spacing: 2px; }
+    .nav-link             { color: #9999bb !important; }
+    .nav-link:hover,
+    .nav-link.active      { color: #fff !important; }
+    .card                 { background: var(--bb-card); border: 1px solid var(--bb-border); color: #d0d0e0; }
+    .card.hoverable:hover { border-color: var(--bb-blue); transform: translateY(-2px); transition: all .15s; }
+    .btn-bb               { background: var(--bb-blue); border-color: var(--bb-blue); color: #fff; }
+    .btn-bb:hover         { background: #1558c0; border-color: #1558c0; color: #fff; }
+    .badge-avail          { background: #1a6b3a; color: #b7e4c7; font-size:.7rem; }
+    .badge-out            { background: #0a1a2a; color: #a5c8f8; font-size:.7rem; }
+    .table-dark           { --bs-table-bg: var(--bb-card); }
+    .form-control,
+    .form-select          { background: #1a1a2e; color: #d0d0e0; border-color: var(--bb-border); }
+    .form-control:focus,
+    .form-select:focus    { background: #1a1a2e; color: #d0d0e0; border-color: var(--bb-blue); box-shadow: 0 0 0 .2rem rgba(26,115,232,.25); }
+    .input-group-text     { background: #1a1a2e; color: #666; border-color: var(--bb-border); }
+    label.form-label      { color: #aaa; }
+    .dropdown-menu        { background: #1a1a2e; border-color: var(--bb-border); }
+    .dropdown-item        { color: #d0d0e0; }
+    .dropdown-item:hover  { background: #2a2a45; color: #fff; }
+    .page-link            { background: var(--bb-card); border-color: var(--bb-border); color: #9999bb; }
+    .page-item.active .page-link { background: var(--bb-blue); border-color: var(--bb-blue); }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+  <div class="container-xl">
+    <a class="navbar-brand" href="/"><i class="bi bi-collection-play-fill me-1"></i>BLUEBOX</a>
+    <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof page !== 'undefined' && page === 'catalog') ? 'active' : '' %>" href="/">
+            <i class="bi bi-film me-1"></i>Catalog
+          </a>
+        </li>
+        <% if (typeof user !== 'undefined' && user) { %>
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof page !== 'undefined' && page === 'history') ? 'active' : '' %>" href="/history">
+            <i class="bi bi-clock-history me-1"></i>My Rentals
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof page !== 'undefined' && page === 'reports') ? 'active' : '' %>" href="/reports">
+            <i class="bi bi-bar-chart-line me-1"></i>Reports
+          </a>
+        </li>
+        <% } %>
+        <li class="nav-item">
+          <a class="nav-link <%= (typeof page !== 'undefined' && page === 'ops') ? 'active' : '' %>" href="/ops">
+            <i class="bi bi-activity me-1"></i>Operations
+          </a>
+        </li>
+      </ul>
+      <ul class="navbar-nav align-items-center gap-2">
+        <li class="nav-item">
+          <a class="nav-link position-relative" href="/cart">
+            <i class="bi bi-bag-fill"></i> Cart
+            <% if (typeof cartCount !== 'undefined' && cartCount > 0) { %>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill" style="background:var(--bb-blue);font-size:.65rem"><%= cartCount %></span>
+            <% } %>
+          </a>
+        </li>
+        <% if (typeof user !== 'undefined' && user) { %>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle me-1"></i><%= user.full_name.split(' ')[0] %>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text text-muted small"><%= user.email %></span></li>
+            <li><hr class="dropdown-divider border-secondary"></li>
+            <li><a class="dropdown-item" href="/history">My Rentals</a></li>
+            <li><a class="dropdown-item" href="/reports">Reports</a></li>
+            <li><hr class="dropdown-divider border-secondary"></li>
+            <li>
+              <form action="/auth/logout" method="POST">
+                <button type="submit" class="dropdown-item text-danger">Sign Out</button>
+              </form>
+            </li>
+          </ul>
+        </li>
+        <% } else { %>
+        <li class="nav-item">
+          <a class="btn btn-sm btn-bb px-3" href="/auth/login">Sign In</a>
+        </li>
+        <% } %>
+      </ul>
+    </div>
+  </div>
+</nav>
+<main class="container-xl py-4 px-3 px-md-4">

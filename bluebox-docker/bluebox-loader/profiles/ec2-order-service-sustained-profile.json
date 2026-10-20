@@ -1,0 +1,36 @@
+{
+  "service_name": "Order-service-ec2-sustained-profile",
+  "db": {
+    "host": "${BLUEBOX_DB_HOST:-host.docker.internal}",
+    "port": "${BLUEBOX_DB_PORT:-5432}",
+    "dbname": "${BLUEBOX_DB_NAME:-bluebox}",
+    "user": "${BLUEBOX_DB_USER:-bb_app}",
+    "password": "${BLUEBOX_DB_PASSWORD}",
+    "sslmode": "${BLUEBOX_DB_SSLMODE:-prefer}",
+    "connect_timeout": "${BLUEBOX_DB_CONNECT_TIMEOUT:-10}"
+  },
+  "workload": {
+    "sessions": 50000,
+    "threads": 16,
+    "delay_ms": 15,
+    "max_runtime_minutes": 25,
+    "max_transactions": 50000
+  },
+  "operation_weights": {
+    "insert_order": 55,
+    "update_order": 35,
+    "run_report": 10
+  },
+  "insert_order": {
+    "window_minutes": 5
+  },
+  "update_order": {
+    "min_rental_age_hours": 16,
+    "completion_pct": 20.0
+  },
+  "report": {
+    "report_name": "inventory_balance",
+    "overdue_days": 7,
+    "film_min_stores": 0
+  }
+}

@@ -1,0 +1,299 @@
+<%- include('partials/header', { title: 'Operations', page: 'ops' }) %>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h4 class="text-white mb-0"><i class="bi bi-activity me-2" style="color:var(--bb-blue)"></i>Operations Dashboard</h4>
+    <small class="text-muted">Real-time rental activity</small>
+  </div>
+  <div class="d-flex align-items-center gap-3">
+    <div class="d-flex align-items-center gap-2">
+      <label class="text-muted small mb-0" for="windowSelect">Range</label>
+      <select id="windowSelect" class="form-select form-select-sm" style="width:auto">
+        <option value="15s">15 seconds</option>
+        <option value="30s">30 seconds</option>
+        <option value="1m">1 minute</option>
+        <option value="5m">5 minutes</option>
+        <option value="30m" selected>30 minutes</option>
+        <option value="1d">1 day</option>
+        <option value="7d">7 days</option>
+      </select>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <label class="text-muted small mb-0" for="intervalSelect">Refresh</label>
+      <select id="intervalSelect" class="form-select form-select-sm" style="width:auto">
+        <option value="1000">1 second</option>
+        <option value="2000">2 seconds</option>
+        <option value="5000" selected>5 seconds</option>
+        <option value="10000">10 seconds</option>
+        <option value="60000">1 minute</option>
+        <option value="300000">5 minutes</option>
+        <option value="1800000">30 minutes</option>
+      </select>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span id="conn-status" class="badge bg-secondary">Connecting…</span>
+      <small class="text-muted" id="last-updated"></small>
+    </div>
+  </div>
+</div>
+
+<!-- Live metrics -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h2 text-white mb-0" id="m-open">—</div>
+      <small class="text-muted">Open Rentals</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h2 mb-0" id="m-5min" style="color:var(--bb-blue)">—</div>
+      <small class="text-muted">Last 5 Min</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h2 mb-0" id="m-hour" style="color:#f4a261">—</div>
+      <small class="text-muted">Last Hour</small>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card p-3 text-center">
+      <div class="h2 mb-0" id="m-customers" style="color:#74c0fc">—</div>
+      <small class="text-muted">Active Customers</small>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Charts column -->
+  <div class="col-lg-8">
+    <div class="card p-3 mb-4">
+      <h6 class="text-muted small mb-3"><i class="bi bi-graph-up-arrow me-1"></i>Rentals — <span id="trend-label">Last 30 minutes</span></h6>
+      <div style="position:relative">
+        <canvas id="trendChart" height="100"></canvas>
+        <div id="trend-no-data" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center">
+          <span class="text-muted small">No rentals in this window — widen the range or run a load profile</span>
+        </div>
+      </div>
+    </div>
+    <div class="card p-3">
+      <h6 class="text-muted small mb-3"><i class="bi bi-trophy me-1"></i>Top Films — <span id="top-label">Last 30 minutes</span></h6>
+      <canvas id="topChart" height="130"></canvas>
+    </div>
+  </div>
+
+  <!-- Activity feed column -->
+  <div class="col-lg-4">
+    <div class="card p-3" style="height:100%">
+      <h6 class="text-muted small mb-3"><i class="bi bi-lightning-fill me-1" style="color:#f4a261"></i>Live Activity</h6>
+      <div id="feed" style="overflow-y:auto;max-height:540px">
+        <div class="text-muted text-center py-4 small" id="feed-placeholder">Waiting for activity…</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Error log -->
+<div class="card mt-4 p-3" id="error-panel" style="display:none">
+  <h6 class="text-muted small mb-2">
+    <i class="bi bi-terminal me-1" style="color:#74c0fc"></i>System Log
+    <span class="badge ms-2" style="background:#0a1a2a;color:#a5c8f8;font-size:.7rem" id="error-count">0</span>
+    <button class="btn btn-sm btn-outline-secondary float-end py-0" style="font-size:.7rem" onclick="clearErrorLog()">Clear</button>
+  </h6>
+  <div id="error-log" style="font-family:monospace;font-size:.75rem;max-height:300px;overflow-y:auto"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+// ── Chart setup ───────────────────────────────────────────────────────────
+const GRID = '#1e1e38';
+const TICK = '#555';
+
+const trendChart = new Chart(document.getElementById('trendChart'), {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      borderColor:     '#1a73e8',
+      backgroundColor: 'rgba(26,115,232,.12)',
+      borderWidth: 2,
+      tension: 0.4,
+      fill: true,
+      pointRadius: 3,
+      pointHoverRadius: 5,
+    }]
+  },
+  options: {
+    responsive: true, animation: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { color: TICK, maxRotation: 0 } },
+      y: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true },
+    }
+  }
+});
+
+const topChart = new Chart(document.getElementById('topChart'), {
+  type: 'bar',
+  data: {
+    labels: [],
+    datasets: [{
+      data: [],
+      backgroundColor: 'rgba(230,57,70,.7)',
+      borderColor:     '#e63946',
+      borderWidth: 1,
+    }]
+  },
+  options: {
+    responsive: true, animation: false, indexAxis: 'y',
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { color: GRID }, ticks: { color: TICK }, beginAtZero: true },
+      y: { grid: { display: false }, ticks: { color: '#ccc', font: { size: 11 } } },
+    }
+  }
+});
+
+// ── SSE ───────────────────────────────────────────────────────────────────
+const statusEl  = document.getElementById('conn-status');
+const updatedEl = document.getElementById('last-updated');
+const feed      = document.getElementById('feed');
+const seenIds   = new Set();
+
+function esc(s) {
+  return String(s ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let es = null;
+
+const WINDOW_LABELS = {
+  '15s':'Last 15 seconds', '30s':'Last 30 seconds', '1m':'Last 1 minute',
+  '5m':'Last 5 minutes', '30m':'Last 30 minutes', '1d':'Last 24 hours', '7d':'Last 7 days'
+};
+
+function connect() {
+  const intervalMs  = document.getElementById('intervalSelect').value;
+  const chartWindow = document.getElementById('windowSelect').value;
+  const label       = WINDOW_LABELS[chartWindow] || chartWindow;
+  document.getElementById('trend-label').textContent = label;
+  document.getElementById('top-label').textContent   = label;
+  if (es) es.close();
+  es = new EventSource(`/ops/stream?interval_ms=${intervalMs}&window=${chartWindow}`);
+  es.onopen    = () => { statusEl.textContent = '● LIVE';    statusEl.className = 'badge bg-success'; };
+  es.onerror   = () => { statusEl.textContent = '● OFFLINE'; statusEl.className = 'badge bg-danger';  };
+  es.onmessage = handleMessage;
+}
+
+document.getElementById('intervalSelect').addEventListener('change', connect);
+document.getElementById('windowSelect').addEventListener('change', connect);
+
+connect();
+
+function handleMessage(e) {
+  const d = JSON.parse(e.data);
+
+  // Metrics
+  document.getElementById('m-open').textContent      = Number(d.metrics.open_rentals).toLocaleString();
+  document.getElementById('m-5min').textContent      = Number(d.metrics.last_5min).toLocaleString();
+  document.getElementById('m-hour').textContent      = Number(d.metrics.last_hour).toLocaleString();
+  document.getElementById('m-customers').textContent = Number(d.metrics.active_customers).toLocaleString();
+  updatedEl.textContent = new Date(d.ts).toLocaleTimeString();
+
+  // Trend chart
+  const noData = document.getElementById('trend-no-data');
+  trendChart.data.labels           = d.trend.map(t => t.minute);
+  trendChart.data.datasets[0].data = d.trend.map(t => parseInt(t.rentals));
+  trendChart.update('none');
+  if (d.trend.length === 0) {
+    noData.style.display = 'flex';
+    trendChart.canvas.style.opacity = '0.15';
+  } else {
+    noData.style.display = 'none';
+    trendChart.canvas.style.opacity = '1';
+  }
+
+  // Top films chart
+  topChart.data.labels             = d.topFilms.map(f => f.title.length > 32 ? f.title.slice(0,30)+'…' : f.title);
+  topChart.data.datasets[0].data   = d.topFilms.map(f => parseInt(f.rentals));
+  topChart.update('none');
+
+  // Activity feed
+  const newItems = d.activity.filter(a => !seenIds.has(String(a.rental_id)));
+
+  if (newItems.length > 0) {
+    const placeholder = document.getElementById('feed-placeholder');
+    if (placeholder) placeholder.remove();
+
+    newItems.forEach(a => {
+      seenIds.add(String(a.rental_id));
+      const el = document.createElement('div');
+      el.style.cssText = 'border-bottom:1px solid #1e1e38;padding:.4rem .25rem;animation:fadeIn .3s ease';
+      el.innerHTML = `
+        <div style="color:#fff;font-size:.83rem;font-weight:600">${esc(a.title)}</div>
+        <div style="color:#666;font-size:.75rem">${esc(a.full_name)} &mdash; ${new Date(a.rented_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
+      feed.insertBefore(el, feed.firstChild);
+    });
+
+    // Cap feed at 40 items
+    while (feed.children.length > 40) feed.removeChild(feed.lastChild);
+
+  } else if (seenIds.size === 0 && d.activity.length > 0) {
+    // First load — pre-populate without animation
+    const placeholder = document.getElementById('feed-placeholder');
+    if (placeholder) placeholder.remove();
+    d.activity.forEach(a => {
+      seenIds.add(String(a.rental_id));
+      const el = document.createElement('div');
+      el.style.cssText = 'border-bottom:1px solid #1e1e38;padding:.4rem .25rem';
+      el.innerHTML = `
+        <div style="color:#fff;font-size:.83rem;font-weight:600">${esc(a.title)}</div>
+        <div style="color:#666;font-size:.75rem">${esc(a.full_name)} &mdash; ${new Date(a.rented_at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>`;
+      feed.appendChild(el);
+    });
+  }
+
+  // Error log
+  const panel    = document.getElementById('error-panel');
+  const errorDiv = document.getElementById('error-log');
+  const errorCnt = document.getElementById('error-count');
+  if (d.messages && d.messages.length > 0) {
+    panel.style.display = 'block';
+    errorCnt.textContent = d.messages.length;
+    errorDiv.innerHTML = d.messages.slice().reverse().map(m => {
+      let levelColor = '#999';
+      let levelSymbol = '○';
+      if (m.level === 'error') {
+        levelColor = '#f8a5a8';
+        levelSymbol = '✗';
+      } else if (m.level === 'warn') {
+        levelColor = '#f4a261';
+        levelSymbol = '⚠';
+      } else if (m.level === 'info') {
+        levelColor = '#74c0fc';
+        levelSymbol = 'ℹ';
+      }
+      return `<div style="padding:.2rem 0;border-bottom:1px solid #1e1e38">` +
+        `<span style="color:#666">${new Date(m.ts).toLocaleTimeString()}</span> ` +
+        `<span style="color:${levelColor}">${levelSymbol}</span> ` +
+        `<span style="color:#999">[${esc(m.source)}]</span> ` +
+        `<span style="color:#ccc">${esc(m.message)}</span></div>`;
+    }).join('');
+  } else {
+    panel.style.display = 'none';
+  }
+}
+
+function clearErrorLog() {
+  document.getElementById('error-panel').style.display = 'none';
+}
+
+// Fade-in keyframe
+const style = document.createElement('style');
+style.textContent = '@keyframes fadeIn { from { opacity:0; transform:translateY(-4px) } to { opacity:1; transform:none } }';
+document.head.appendChild(style);
+</script>
+
+<%- include('partials/footer') %>

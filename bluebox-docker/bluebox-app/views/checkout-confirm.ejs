@@ -1,0 +1,45 @@
+<%- include('partials/header', { title: 'Rental Confirmed', page: '' }) %>
+
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+    <div class="card p-4 text-center mb-3">
+      <i class="bi bi-check-circle-fill text-success" style="font-size:3.5rem"></i>
+      <h4 class="text-white mt-3 mb-1">Enjoy your films!</h4>
+      <p class="text-muted small mb-0">Your rentals are confirmed. Return them at any Bluebox location.</p>
+    </div>
+
+    <% if (rentedFilms.length > 0) { %>
+    <div class="card mb-3">
+      <div class="px-3 pt-3 pb-1">
+        <h6 class="text-muted small text-uppercase mb-2">Checked Out</h6>
+      </div>
+      <% rentedFilms.forEach(f => { %>
+      <div class="d-flex align-items-center gap-3 px-3 py-2" style="border-top:1px solid var(--bb-border)">
+        <i class="bi bi-check-circle-fill text-success"></i>
+        <div>
+          <div class="text-white fw-semibold small"><%= f.title %></div>
+          <div class="text-muted" style="font-size:.75rem">Rental #<%= f.rental_id %></div>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    <% } %>
+
+    <% if (failedFilms.length > 0) { %>
+    <div class="card mb-3 p-3" style="border-color:#7a4a1a">
+      <h6 class="mb-2" style="color:#f0a060"><i class="bi bi-exclamation-triangle me-2"></i>Unavailable at Checkout</h6>
+      <p class="text-muted small mb-2">No copies were available for these titles:</p>
+      <ul class="list-unstyled mb-0">
+        <% failedFilms.forEach(t => { %><li class="text-muted small">• <%= t %></li><% }) %>
+      </ul>
+    </div>
+    <% } %>
+
+    <div class="d-flex gap-3">
+      <a href="/" class="btn btn-outline-secondary flex-fill">Browse More</a>
+      <a href="/history" class="btn btn-bb flex-fill">My Rentals</a>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

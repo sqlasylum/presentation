@@ -1,0 +1,34 @@
+{
+  "service_name": "Shipping-service-small-profile",
+  "db": {
+    "host": "${BLUEBOX_DB_HOST:-host.docker.internal}",
+    "port": "${BLUEBOX_DB_PORT:-5432}",
+    "dbname": "${BLUEBOX_DB_NAME:-bluebox}",
+    "user": "${BLUEBOX_DB_USER:-bb_app}",
+    "password": "${BLUEBOX_DB_PASSWORD}",
+    "sslmode": "${BLUEBOX_DB_SSLMODE:-prefer}",
+    "connect_timeout": "${BLUEBOX_DB_CONNECT_TIMEOUT:-10}"
+  },
+  "workload": {
+    "sessions": 80,
+    "threads": 8,
+    "delay_ms": 100
+  },
+  "operation_weights": {
+    "insert_order": 25,
+    "update_order": 25,
+    "run_report": 50
+  },
+  "insert_order": {
+    "window_minutes": 5
+  },
+  "update_order": {
+    "min_rental_age_hours": 16,
+    "completion_pct": 10.0
+  },
+  "report": {
+    "report_name": "status_summary",
+    "overdue_days": 7,
+    "film_min_stores": 1
+  }
+}

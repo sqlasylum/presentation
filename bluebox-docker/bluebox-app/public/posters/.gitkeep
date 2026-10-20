@@ -1,0 +1,3 @@
+# Cached poster images directory
+# Images are automatically downloaded here from TMDB/OMDb APIs
+# This directory is not tracked by git - images are generated at runtime

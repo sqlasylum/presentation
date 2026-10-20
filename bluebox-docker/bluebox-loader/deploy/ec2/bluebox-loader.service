@@ -1,0 +1,15 @@
+[Unit]
+Description=Bluebox Loader Profile Runner
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bluebox-loader
+Environment=PROFILE_FILE=profiles/order-service-large-profile.json
+ExecStart=/usr/bin/python3 -m bluebox_loader.main --profile ${PROFILE_FILE}
+Restart=on-failure
+RestartSec=5
+User=ec2-user
+
+[Install]
+WantedBy=multi-user.target

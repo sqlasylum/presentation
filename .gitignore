@@ -1,1 +1,3 @@
 *.note
+
+/bluebox-docker.git-backup/

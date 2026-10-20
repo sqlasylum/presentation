@@ -1,0 +1,87 @@
+<%- include('partials/header', { title: 'Reports', page: 'reports' }) %>
+
+<h4 class="text-white mb-4"><i class="bi bi-bar-chart-line me-2"></i>Reports</h4>
+
+<!-- Report selector tabs -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+  <% Object.entries(reports).forEach(([key, def]) => { %>
+  <a href="/reports?report=<%= key %>" class="btn btn-sm <%= report === key ? 'btn-bb' : 'btn-outline-secondary' %>">
+    <%= def.label %>
+  </a>
+  <% }) %>
+</div>
+
+<!-- Parameter controls -->
+<% if (report === 'overdue_rentals') { %>
+<form method="GET" action="/reports" class="d-flex align-items-center gap-2 mb-3">
+  <input type="hidden" name="report" value="overdue_rentals">
+  <label class="text-muted small">Overdue by at least</label>
+  <input type="number" name="overdue_days" value="<%= overdue_days %>" min="1" max="365"
+         class="form-control form-control-sm" style="width:70px">
+  <label class="text-muted small">days</label>
+  <button type="submit" class="btn btn-sm btn-bb">Run</button>
+</form>
+<% } %>
+
+<% if (report === 'film_availability') { %>
+<form method="GET" action="/reports" class="d-flex align-items-center gap-2 mb-3">
+  <input type="hidden" name="report" value="film_availability">
+  <label class="text-muted small">Available in at least</label>
+  <input type="number" name="min_stores" value="<%= min_stores %>" min="0"
+         class="form-control form-control-sm" style="width:70px">
+  <label class="text-muted small">stores</label>
+  <button type="submit" class="btn btn-sm btn-bb">Run</button>
+</form>
+<% } %>
+
+<!-- Results -->
+<div class="card">
+  <div class="d-flex justify-content-between align-items-center px-3 py-2" style="border-bottom:1px solid var(--bb-border)">
+    <span class="text-muted small"><%= reports[report].label %></span>
+    <span class="badge" style="background:#1a1a38;color:#666;font-size:.7rem"><%= data.length %> rows &bull; live</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-dark table-hover table-sm mb-0" style="font-size:.84rem">
+      <thead>
+        <tr style="color:#555;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em">
+          <% columns.forEach(col => { %>
+          <th class="ps-3"><%= col.replace(/_/g,' ') %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (data.length === 0) { %>
+        <tr><td colspan="<%= columns.length %>" class="text-center text-muted py-4">No data returned.</td></tr>
+        <% } %>
+        <% data.forEach(row => { %>
+        <tr>
+          <% columns.forEach((col, idx) => { %>
+          <td class="<%= idx === 0 ? 'ps-3' : '' %> text-light">
+            <%
+              const v = row[col];
+              let out = v;
+              if (v === null || v === undefined) {
+                out = '—';
+              } else if (col.includes('pct')) {
+                out = parseFloat(v).toFixed(1) + '%';
+              } else if (col.includes('value') || col.includes('cost') || col.includes('amount')) {
+                out = '$' + parseFloat(v).toFixed(2);
+              } else if (col.includes('_at') || col === 'rental_start') {
+                out = v ? new Date(v).toLocaleString() : '—';
+              } else if (col === 'release_date') {
+                out = v ? new Date(v).getFullYear() : '—';
+              } else if (typeof v === 'number' && v > 999) {
+                out = v.toLocaleString();
+              }
+            %>
+            <%= out %>
+          </td>
+          <% }) %>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

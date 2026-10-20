@@ -1,0 +1,11 @@
+<%- include('partials/header', { title: 'Error', page: '' }) %>
+
+<div class="row justify-content-center mt-5">
+  <div class="col-md-5 text-center">
+    <i class="bi bi-exclamation-triangle-fill" style="font-size:3.5rem;color:var(--bb-blue)"></i>
+    <h4 class="text-white mt-3"><%= message || 'Something went wrong.' %></h4>
+    <a href="/" class="btn btn-bb mt-3">Go Home</a>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

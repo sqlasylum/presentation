@@ -1,0 +1,11 @@
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    uid: bluebox-prometheus
+    url: http://prometheus:9090
+    access: proxy
+    isDefault: false
+    jsonData:
+      httpMethod: POST

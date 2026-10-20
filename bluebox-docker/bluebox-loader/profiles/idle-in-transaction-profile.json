@@ -1,0 +1,46 @@
+{
+  "service_name": "idle-in-transaction-service",
+  "db": {
+    "host": "${BLUEBOX_DB_HOST:-host.docker.internal}",
+    "port": "${BLUEBOX_DB_PORT:-5432}",
+    "dbname": "${BLUEBOX_DB_NAME:-bluebox}",
+    "user": "${BLUEBOX_DB_USER:-bb_app}",
+    "password": "${BLUEBOX_DB_PASSWORD}",
+    "sslmode": "${BLUEBOX_DB_SSLMODE:-prefer}",
+    "connect_timeout": "${BLUEBOX_DB_CONNECT_TIMEOUT:-10}"
+  },
+  "workload": {
+    "sessions": 2000,
+    "threads": 4,
+    "delay_ms": 0,
+    "max_runtime_minutes": 10,
+    "max_transactions": 1200
+  },
+  "operation_weights": {
+    "insert_order": 0,
+    "update_order": 0,
+    "run_report": 0,
+    "force_deadlock": 0,
+    "idle_in_transaction": 15
+  },
+  "idle_in_transaction": {
+    "idle_seconds": 2,
+    "report_name": "status_summary"
+  },
+  "insert_order": {
+    "window_minutes": 5
+  },
+  "update_order": {
+    "min_rental_age_hours": 16,
+    "completion_pct": 15.0
+  },
+  "report": {
+    "report_name": "inventory_balance",
+    "overdue_days": 7,
+    "film_min_stores": 0
+  },
+  "deadlock": {
+    "interval_seconds": 10,
+    "lock_timeout_seconds": 5
+  }
+}

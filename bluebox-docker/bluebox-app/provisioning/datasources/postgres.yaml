@@ -1,0 +1,20 @@
+apiVersion: 1
+
+datasources:
+  - name: Postgres
+    type: postgres
+    uid: bluebox-postgres
+    url: $PGHOST:$PGPORT
+    user: $PGUSER
+    isDefault: true
+    secureJsonData:
+      password: '$PGPASSWORD'
+    jsonData:
+      database: $PGDATABASE
+      sslmode: 'disable' # disable/require/verify-ca/verify-full
+      maxOpenConns: 100
+      maxIdleConns: 100
+      maxIdleConnsAuto: true
+      connMaxLifetime: 14400
+      postgresVersion: 1800 # 903=9.3 ... 1400=14, 1500=15, 1600=16, 1700=17, 1800=18
+      timescaledb: false

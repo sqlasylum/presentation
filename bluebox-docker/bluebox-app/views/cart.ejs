@@ -1,0 +1,76 @@
+<%- include('partials/header', { title: 'Your Cart', page: '' }) %>
+
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <h4 class="text-white mb-4"><i class="bi bi-bag-fill me-2"></i>Your Cart</h4>
+
+    <% if (cart.length === 0) { %>
+    <div class="card text-center p-5">
+      <i class="bi bi-bag" style="font-size:3rem;color:#333"></i>
+      <p class="mt-3 text-muted">Your cart is empty.</p>
+      <div><a href="/" class="btn btn-bb">Browse Films</a></div>
+    </div>
+
+    <% } else { %>
+
+    <!-- Cart items -->
+    <div class="card mb-4">
+      <% cart.forEach(item => { %>
+      <div class="d-flex justify-content-between align-items-center p-3" style="border-bottom:1px solid var(--bb-border)">
+        <div>
+          <a href="/film/<%= item.film_id %>" class="text-decoration-none" style="color:#d0d0e0">
+            <span class="fw-semibold"><%= item.title %></span>
+          </a>
+          <% if (item.rating) { %><span class="badge bg-secondary ms-2" style="font-size:.65rem"><%= item.rating %></span><% } %>
+        </div>
+        <form action="/cart/remove" method="POST">
+          <input type="hidden" name="film_id" value="<%= item.film_id %>">
+          <button type="submit" class="btn btn-sm btn-outline-danger border-0"><i class="bi bi-trash3"></i></button>
+        </form>
+      </div>
+      <% }) %>
+    </div>
+
+    <!-- Checkout panel -->
+    <div class="card p-4">
+      <% if (!user) { %>
+      <h6 class="text-white mb-1">Sign in to check out</h6>
+      <p class="text-muted small mb-3">Just your name and email — no payment needed.</p>
+      <form action="/auth/login" method="POST">
+        <input type="hidden" name="redirect" value="/cart">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label text-muted small">Full Name</label>
+            <input type="text" name="full_name" class="form-control" placeholder="Jane Smith" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label text-muted small">Email</label>
+            <input type="email" name="email" class="form-control" placeholder="jane@example.com" required>
+          </div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-bb">Sign In & Continue</button>
+          </div>
+        </div>
+      </form>
+      <% } else { %>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+          <div class="text-white fw-semibold"><%= user.full_name %></div>
+          <div class="text-muted small"><%= user.email %></div>
+        </div>
+        <span class="badge" style="background:#1a1a38;border:1px solid var(--bb-border);color:#9999bb"><%= cart.length %> title<%= cart.length !== 1 ? 's' : '' %></span>
+      </div>
+      <form action="/cart/checkout" method="POST">
+        <button type="submit" class="btn btn-bb btn-lg w-100">
+          <i class="bi bi-bag-check me-2"></i>Complete Rental — Free
+        </button>
+      </form>
+      <p class="text-muted small text-center mt-2 mb-0">This is a demo — no payment is processed.</p>
+      <% } %>
+    </div>
+
+    <% } %>
+  </div>
+</div>
+
+<%- include('partials/footer') %>

@@ -1,0 +1,103 @@
+<%- include('partials/header', { title: film.title, page: 'catalog' }) %>
+
+<nav aria-label="breadcrumb" class="mb-3">
+  <ol class="breadcrumb" style="font-size:.85rem">
+    <li class="breadcrumb-item"><a href="/" class="text-decoration-none" style="color:var(--bb-blue)">Catalog</a></li>
+    <li class="breadcrumb-item active text-muted"><%= film.title %></li>
+  </ol>
+</nav>
+
+<div class="row g-4">
+  <!-- Main info -->
+  <div class="col-lg-8">
+    <div class="card p-4">
+      <h1 class="text-white h3 mb-2"><%= film.title %></h1>
+
+      <div class="d-flex flex-wrap gap-2 mb-3">
+        <% if (film.rating) { %><span class="badge bg-secondary"><%= film.rating %></span><% } %>
+        <% if (film.release_date) { %><span class="badge" style="background:#1e1e38;border:1px solid var(--bb-border)"><%= new Date(film.release_date).getFullYear() %></span><% } %>
+        <% if (film.runtime) { %><span class="badge" style="background:#1e1e38;border:1px solid var(--bb-border)"><i class="bi bi-clock me-1"></i><%= film.runtime %> min</span><% } %>
+        <% (film.genres || []).forEach(g => { %><span class="badge" style="background:#1e1e38;border:1px solid var(--bb-border)"><%= g %></span><% }) %>
+      </div>
+
+      <p class="text-muted mb-4" style="line-height:1.7"><%= film.overview %></p>
+
+      <% if (crew.length > 0) { %>
+      <div class="row g-3 mb-3">
+        <% crew.forEach(c => { %>
+        <div class="col-auto">
+          <div class="small text-muted"><%= c.job %></div>
+          <div class="small text-white"><%= c.name %></div>
+        </div>
+        <% }) %>
+      </div>
+      <hr style="border-color:var(--bb-border)">
+      <% } %>
+
+      <% if (cast.length > 0) { %>
+      <h6 class="text-muted mb-3 small text-uppercase letter-spacing-1">Cast</h6>
+      <div class="row g-2">
+        <% cast.forEach(c => { %>
+        <div class="col-6 col-md-4 col-lg-3">
+          <div class="p-2 rounded" style="background:#0d0d1a;border:1px solid var(--bb-border)">
+            <div class="small text-white fw-semibold"><%= c.name %></div>
+            <div class="small text-muted" style="font-size:.75rem"><i><%= c.film_character %></i></div>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Sidebar: availability + add to cart -->
+  <div class="col-lg-4">
+    <div class="card p-4 text-center mb-3">
+      <% if (availableCopies > 0) { %>
+      <i class="bi bi-check-circle-fill text-success" style="font-size:2.5rem"></i>
+      <div class="text-white fw-bold mt-2"><%= availableCopies %> cop<%= availableCopies === 1 ? 'y' : 'ies' %> available</div>
+      <% } else { %>
+      <i class="bi bi-x-circle text-primary" style="font-size:2.5rem"></i>
+      <div class="text-muted mt-2">All copies checked out</div>
+      <% } %>
+
+      <div class="mt-3">
+        <% if (availableCopies > 0 && !inCart) { %>
+        <form action="/cart/add" method="POST">
+          <input type="hidden" name="film_id" value="<%= film.film_id %>">
+          <input type="hidden" name="title"   value="<%= film.title %>">
+          <input type="hidden" name="rating"  value="<%= film.rating || '' %>">
+          <button type="submit" class="btn btn-bb w-100"><i class="bi bi-bag-plus me-2"></i>Add to Cart</button>
+        </form>
+        <% } else if (inCart) { %>
+        <a href="/cart" class="btn btn-outline-success w-100"><i class="bi bi-bag-check me-2"></i>In Cart — View</a>
+        <% } else { %>
+        <button class="btn btn-secondary w-100" disabled>Out of Stock</button>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card p-3">
+      <table class="table table-sm table-dark table-borderless mb-0">
+        <% if (film.vote_average) { %>
+        <tr><td class="text-muted small">Score</td><td class="text-white small"><%= film.vote_average.toFixed(1) %>/10 (<%= (film.vote_count || 0).toLocaleString() %> votes)</td></tr>
+        <% } %>
+        <% if (film.popularity) { %>
+        <tr><td class="text-muted small">Popularity</td><td class="text-white small"><%= Math.round(film.popularity).toLocaleString() %></td></tr>
+        <% } %>
+        <% if (film.budget > 0) { %>
+        <tr><td class="text-muted small">Budget</td><td class="text-white small">$<%= (film.budget/1e6).toFixed(1) %>M</td></tr>
+        <% } %>
+        <% if (film.revenue > 0) { %>
+        <tr><td class="text-muted small">Revenue</td><td class="text-white small">$<%= (film.revenue/1e6).toFixed(1) %>M</td></tr>
+        <% } %>
+        <% if (film.original_language) { %>
+        <tr><td class="text-muted small">Language</td><td class="text-white small"><%= film.original_language.toUpperCase() %></td></tr>
+        <% } %>
+      </table>
+    </div>
+  </div>
+</div>
+
+<%- include('partials/footer') %>
