@@ -86,7 +86,7 @@ ORDER BY tree.path;
 
 
 select pg_cancel_backend(25);
-select pg_terminate_backend(25);
+select pg_terminate_backend(84594);
 
 
 
