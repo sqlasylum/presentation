@@ -11,6 +11,9 @@ A PostgreSQL sample database simulating a video rental kiosk business (think Red
 - **Multiple PostgreSQL versions**: 14, 15, 16, 17, 18, and 19-dev (built from master)
 - **Multi-architecture**: AMD64 and ARM64 (native Apple Silicon support)
 - **Pre-loaded extensions**: PostGIS, pg_stat_statements, hypopg, pgvector, TimescaleDB, and more
+- **Web app and Grafana**: Browse films, simulate rentals, and view bundled database dashboards
+- **Prometheus monitoring**: Collect PostgreSQL, container, and host metrics
+- **Workload loader**: Run profile-driven database workloads in a separate Docker image
 
 ## Overview
 The motivation for this "ready to go" Docker container is primarily testing and training. The schema will continue to undergo changes which can be tracked in the separate [Bluebox Schema repository](https://github.com/ryanbooz/bluebox).
@@ -47,6 +50,50 @@ export PG_PORT=5432
 # Start the container (project name keeps instances separate)
 docker compose -p bluebox-pg${PG_VERSION} up -d
 ```
+
+## Web App, Monitoring, and Workload Loader
+
+Run the commands below from this directory. The Compose stack expects the external Docker networks `bouncer` and `rgm-network`; create them once with `docker network create bouncer` and `docker network create rgm-network` if they do not already exist. It also requires `bluebox-app/.env` (an empty file is sufficient unless you want optional poster API settings).
+
+### Bluebox Web App and Grafana
+
+The [web app](bluebox-app/) builds a separate image containing the movie rental UI and Grafana. It provides catalog browsing, checkout, rental history, reports, and operations views, plus provisioned PostgreSQL and Prometheus dashboards.
+
+```bash
+touch bluebox-app/.env
+docker compose up -d postgres
+docker compose up --build -d bluebox-app
+```
+
+Once PostgreSQL is ready, open the app at http://localhost:3000 and Grafana at http://localhost:3001 (default Grafana login: `admin` / `p@ssword`). The app defaults to the `bluebox-18` database container; set `BLUEBOX_DB_HOST` if using another name. See the [poster setup guide](bluebox-app/POSTER_SETUP.md) for optional movie artwork configuration.
+
+### Prometheus Monitoring
+
+Prometheus collects database metrics through PostgreSQL Exporter, container metrics through cAdvisor, and host metrics through Node Exporter. It uses prebuilt images rather than a local image build, with configuration and recording rules mounted from [prometheus/](prometheus/). Grafana in the web app is already configured to query it.
+
+With PostgreSQL running, start the monitoring services:
+
+```bash
+docker compose up -d postgres-exporter cadvisor node-exporter prometheus
+```
+
+Open http://localhost:9090 for Prometheus queries and scrape-target status, or use the dashboards in Grafana. Metrics persist in a Docker volume. If you move this project directory, recreate Prometheus to refresh its configuration mounts:
+
+```bash
+docker compose up -d --force-recreate --no-deps prometheus
+```
+
+### Bluebox Workload Loader
+
+The loader builds another standalone image for profile-driven, multithreaded database activity, including mixed rental workloads, read-only reports, deadlocks, and idle transactions. Run it against a test database, since profiles can change data or generate substantial load.
+
+```bash
+docker build -t bluebox-loader:latest ./bluebox-loader
+export BLUEBOX_DB_PASSWORD='app_password'
+./bluebox-loader/run-docker.sh profiles/shipping-service-small-profile.json
+```
+
+The script connects through `host.docker.internal:5432` by default; use `BLUEBOX_DB_HOST` and `BLUEBOX_DB_PORT` to target another database. See the [loader README](bluebox-loader/README.md) for profiles, connection settings, and deployment options.
 
 ## Running Multiple Versions
 
