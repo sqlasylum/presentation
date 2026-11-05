@@ -1,7 +1,12 @@
-# Quiz Versions
+# PostgreSQL DBA Practice Quizzes
 
-Open [index.html](index.html) directly in a browser. Choose a bank using
-**Quiz Version**. No server or package installation is required.
+This repository contains a browser-based PostgreSQL DBA quiz with two question
+banks. Open [index.html](index.html) directly in a browser; no server or package
+installation is required.
+
+## Quiz Versions
+
+Choose a bank using **Quiz Version**.
 
 | Version | Questions | Domains |
 | --- | --- | --- |
@@ -10,17 +15,24 @@ Open [index.html](index.html) directly in a browser. Choose a bank using
 
 Answers, current question, submitted attempts and history clearing are scoped to
 the selected version. The last selected version is restored when the page opens.
-History review does not replace answers in an unfinished attempt.
-On Results, click a review question to expand its full wording and four read-only
-choices. The saved selection is checked and labeled; incorrect selections are
-highlighted in red, and the correct choice is marked in green. Question summaries
-also open with Enter or Space when focused.
+History review does not replace answers in an unfinished attempt. On Results,
+click a review question to expand its full wording and four read-only choices.
+The saved selection is checked and labeled; incorrect selections are highlighted
+in red, and the correct choice is marked in green. Question summaries also open
+with Enter or Space when focused.
 
 The original bank stays embedded in the page. Its existing `quizHistory` and
 `quizInProgress` browser-storage keys are unchanged. Additional banks use keys
 such as `quizHistory:pavlo` and `quizInProgress:pavlo`. Storage is local to the
 browser/profile and page location; moving the file or clearing browser data can
 make saved attempts unavailable.
+
+## Study Materials
+
+- [PostgreSQL DBA practice exam](PostgreSQL_DBA1_Practice_Exam_04.md) and its
+  [answer key](PostgreSQL_DBA1_Practice_Exam_04_Answer_Key.md)
+- [Pavlo Golub source material](PG_Dba_Test_Cram.txt), used for the 64-question
+  Pavlo quiz bank
 
 ## Adding Another Bank
 
