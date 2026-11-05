@@ -10,10 +10,10 @@
     "connect_timeout": "${BLUEBOX_DB_CONNECT_TIMEOUT:-10}"
   },
   "workload": {
-    "sessions": 1000000,
+    "sessions": 1000000000,
     "threads": 100,
-    "delay_ms": 25000,
-    "max_runtime_minutes": 30
+    "delay_ms": 2500,
+    "max_runtime_minutes": 3000
   },
   "operation_weights": {
     "insert_order": 0,

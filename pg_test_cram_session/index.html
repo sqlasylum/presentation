@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Generated test questions</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .quiz-picker {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .quiz-picker select {
+            flex: 1;
+            min-width: 0;
+            padding: 10px;
+            font: inherit;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .tab-button.active {
+            background: #f5f5f5;
+            border-bottom-color: #667eea;
+            color: #667eea;
+        }
+
+        .tab-button:hover {
+            background: #f9f9f9;
+        }
+
+        .tab-content {
+            padding: 40px;
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Quiz Tab */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .question-number {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .question-text {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 25px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .option {
+            display: flex;
+            align-items: flex-start;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f9f9ff;
+        }
+
+        .option input[type="radio"] {
+            margin-top: 2px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #667eea;
+            width: 20px;
+            height: 20px;
+        }
+
+        .option.selected {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .option-label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 15px;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+            min-width: 120px;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        .btn-danger {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #ff5252;
+        }
+
+        /* Results Tab */
+        .results-container {
+            display: none;
+        }
+
+        .results-container.show {
+            display: block;
+        }
+
+        .score-display {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 12px;
+        }
+
+        .score-number {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .score-percentage {
+            font-size: 24px;
+            opacity: 0.9;
+        }
+
+        .topics-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .topic-card {
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+
+        .topic-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .topic-score {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .topic-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .topic-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .missed-questions {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .missed-questions h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .missed-question {
+            padding: 20px;
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            margin-bottom: 15px;
+            border-radius: 6px;
+        }
+
+        .missed-question.correct {
+            background: #d4edda;
+            border-left-color: #28a745;
+        }
+
+        .missed-q-number {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        summary.missed-q-number {
+            cursor: pointer;
+            line-height: 1.5;
+        }
+
+        summary.missed-q-number:focus-visible {
+            outline: 2px solid #667eea;
+            outline-offset: 4px;
+        }
+
+        .review-choices {
+            border: 0;
+            min-width: 0;
+            margin-top: 16px;
+        }
+
+        .review-choices legend {
+            font-weight: 600;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .review-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 2px solid #d0d0d0;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            line-height: 1.5;
+            overflow-wrap: anywhere;
+        }
+
+        .review-option input {
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+        }
+
+        .review-option.selected {
+            border-color: #b42318;
+            background: #fff0ed;
+        }
+
+        .review-option.correct-answer {
+            border-color: #218838;
+            background: #edf8ef;
+        }
+
+        .missed-q-text {
+            margin-bottom: 10px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .answer-info {
+            font-size: 13px;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 4px;
+        }
+
+        .answer-info strong {
+            display: inline-block;
+            min-width: 90px;
+        }
+
+        .correct {
+            color: #28a745;
+        }
+
+        .incorrect {
+            color: #dc3545;
+        }
+
+        /* History Tab */
+        .history-container {
+            display: block;
+        }
+
+        .history-container.show {
+            display: block;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .history-table thead {
+            background: #f5f5f5;
+        }
+
+        .history-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .history-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .history-table tbody tr:hover {
+            background: #f9f9f9;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .score-badge.high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .score-badge.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .score-badge.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .tabs {
+                flex-wrap: wrap;
+            }
+
+            .tab-button {
+                flex: 1 1 50%;
+            }
+
+            .topics-breakdown {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-buttons {
+                flex-direction: column;
+            }
+
+            .btn-secondary {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 id="quizTitle">AI Generated test questions</h1>
+            <p id="quizSummary">80 Multiple Choice Questions | Topics: T1-T8</p>
+        </div>
+
+        <div class="quiz-picker">
+            <label for="quizVersion">Quiz Version</label>
+            <select id="quizVersion" onchange="changeQuiz(this.value)"></select>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-button active" onclick="switchTab('quiz')">Quiz</button>
+            <button class="tab-button" onclick="switchTab('results')">Results</button>
+            <button class="tab-button" onclick="switchTab('history')">History</button>
+        </div>
+
+        <!-- Quiz Tab -->
+        <div id="quiz" class="tab-content active">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+            </div>
+
+            <div id="quizContainer">
+                <div class="question-number" id="questionNumber"></div>
+                <div class="question-text" id="questionText"></div>
+                <div class="options" id="optionsContainer"></div>
+                <div class="nav-buttons">
+                    <button class="btn-secondary" id="prevBtn" onclick="prevQuestion()">← Previous</button>
+                    <button class="btn-primary" id="nextBtn" onclick="nextQuestion()">Next →</button>
+                    <button class="btn-primary" id="submitBtn" onclick="submitQuiz()" style="display: none;">Submit Quiz</button>
+                    <button class="btn-primary" id="submitNowBtn" onclick="submitQuiz()" style="background: #ff9800;">Submit Now</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Tab -->
+        <div id="results" class="tab-content">
+            <div class="results-container" id="resultsContainer">
+                <div class="score-display">
+                    <div class="score-number" id="finalScore"></div>
+                    <div class="score-percentage" id="finalPercentage"></div>
+                </div>
+
+                <div class="topics-breakdown" id="topicsBreakdown"></div>
+
+                <div class="missed-questions" id="missedQuestionsSection">
+                    <h3 id="missedTitle">Review</h3>
+                    <div id="missedQuestionsList"></div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="btn-primary" onclick="retakeQuiz()">Retake Quiz</button>
+                    <button class="btn-secondary" onclick="switchTab('history')">View History</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div class="history-container" id="historyContainer">
+                <h2 style="margin-bottom: 20px; color: #333;">Score History</h2>
+                <table class="history-table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Score</th>
+                            <th>Percentage</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                    </tbody>
+                </table>
+                <button class="btn-danger" onclick="clearHistory()" style="margin-top: 20px;">Clear History</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="pavlo-quiz.js"></script>
+    <script>
+        let quizData = null;
+        let currentQuestion = 0;
+        let answers = {};
+        let quizSubmitted = false;
+        let activeQuizId = 'original';
+
+        // Quiz data embedded directly (avoids CORS issues with file:// protocol)
+        const embeddedQuizData = {"questions": [{"id": 1, "question": "In pg_stat_activity, what does a `state` of `idle in transaction` indicate?", "options": ["The connection is closed", "The session has an open transaction but is not currently executing a statement — potentially holding locks/old snapshots open", "The query is actively scanning a table", "The backend has crashed"], "answer": "B", "topic": "T8"},{"id": 2, "question": "What is the key advantage of using the PGDG (PostgreSQL Global Development Group) repository over your Linux distribution's default package repository?", "options": ["It provides GUI tools for administration", "It is the only repository that supports extensions", "It bypasses the need for pg_hba.conf configuration", "It offers the latest PostgreSQL major and minor versions faster than most distro repos, which often lag behind"], "answer": "D", "topic": "T1"},{"id": 3, "question": "Which is a valid PostgreSQL connection URI recognized by psql?", "options": ["jdbc:postgres://host/dbname", "mssql://host:1433/dbname", "pg://host/dbname?auth=scram", "postgresql://user:password@host:5432/dbname"], "answer": "D", "topic": "T2"},{"id": 4, "question": "What is the role of the postmaster process?", "options": ["It handles only WAL writing", "It is spawned fresh for every query", "It is the parent process that listens for connections, forks a new backend per client, and manages shared server resources and background processes", "It only exists during initdb"], "answer": "C", "topic": "T5"},{"id": 5, "question": "What is the core difference between a physical backup and a logical backup?", "options": ["A physical backup only backs up roles; a logical backup only backs up table data", "There is no meaningful difference — both produce identical files", "A physical backup copies the raw data files/cluster at the storage level; a logical backup exports data as SQL statements or a portable dump format", "A logical backup requires the server to be offline; a physical backup does not"], "answer": "C", "topic": "T4"},{"id": 6, "question": "What is the core idea behind Multi-Version Concurrency Control (MVCC) in PostgreSQL?", "options": ["Every transaction locks the entire table for the duration of its work", "Only one transaction may run at a time", "All updates are applied in-place with no versioning", "Readers and writers don't block each other because each transaction sees a consistent snapshot of row versions valid at a particular point in time"], "answer": "D", "topic": "T6"},{"id": 7, "question": "Why is VACUUM necessary in PostgreSQL?", "options": ["To reclaim space from dead tuples left by UPDATE/DELETE, update visibility map/free space map info, and prevent transaction ID wraparound issues", "To physically defragment WAL files", "It's only needed if you never run ANALYZE", "To rebuild all indexes from scratch"], "answer": "A", "topic": "T7"},{"id": 8, "question": "What's the difference between pg_cancel_backend() and pg_terminate_backend()?", "options": ["They are functionally identical", "pg_terminate_backend() only works on the current session", "pg_cancel_backend() cancels the currently running query but keeps the session/connection open; pg_terminate_backend() forcibly ends the entire backend process/connection", "pg_cancel_backend() requires superuser, pg_terminate_backend() does not"], "answer": "C", "topic": "T5"},{"id": 9, "question": "Which environment variable typically points to the PostgreSQL data directory, and what does that directory contain?", "options": ["PGHOME; it contains only the binaries", "PGDATA; it contains the cluster's configuration files, WAL, and table/index data files", "PGPORT; it specifies the listening port only", "PGLIB; it contains only shared libraries"], "answer": "B", "topic": "T1"},{"id": 10, "question": "Which CREATE ROLE clause allows a role to actually establish a database connection?", "options": ["NOLOGIN", "CREATEDB", "REPLICATION", "LOGIN"], "answer": "D", "topic": "T3"},{"id": 11, "question": "Which psql meta-command lists all databases on the server?", "options": ["\\dt", "\\d", "\\du", "\\l"], "answer": "D", "topic": "T2"},{"id": 12, "question": "What does the pg_blocking_pids(pid) function return?", "options": ["An array of process IDs of the sessions that are blocking the given session's lock request", "The total number of connections to the database", "The pid of the postmaster", "A list of all idle sessions"], "answer": "A", "topic": "T8"},{"id": 13, "question": "What are PostgreSQL background workers used for?", "options": ["Only for replication", "They replace the postmaster on restart", "They handle only client authentication", "General-purpose or extension-driven background tasks (e.g. logical replication workers, custom extension jobs) that run asynchronously from client backends"], "answer": "D", "topic": "T5"},{"id": 14, "question": "What is the primary purpose of a PostgreSQL tablespace?", "options": ["To define a schema's search_path", "To create a temporary staging area for VACUUM", "To let you store database objects on a different filesystem location/disk than the default data directory", "To partition a table automatically by date"], "answer": "C", "topic": "T1"},{"id": 15, "question": "In pg_locks, what does a row with `granted = false` represent?", "options": ["A lock that has been released", "An error in the locking subsystem", "A lock request that is still waiting to be granted (i.e., the session is blocked)", "A lock held by a superuser"], "answer": "C", "topic": "T8"},{"id": 16, "question": "Which statement creates a new database owned by a specific role?", "options": ["CREATE SCHEMA sales OWNER sales_admin;", "ALTER DATABASE sales SET OWNER = sales_admin;", "CREATE DATABASE sales OWNER sales_admin;", "GRANT sales TO sales_admin;"], "answer": "C", "topic": "T2"},{"id": 17, "question": "Which pg_dump format flag produces a compressed, non-plain-text archive that can be selectively restored with pg_restore?", "options": ["-F p (plain)", "-F c (custom)", "-F t only supports full restores", "pg_dump has no format flags"], "answer": "B", "topic": "T4"},{"id": 18, "question": "Why does an UPDATE or DELETE in PostgreSQL leave behind old row versions that eventually require VACUUM?", "options": ["MVCC keeps old tuple versions so concurrent transactions can still see a consistent snapshot; once no transaction needs them, VACUUM reclaims that dead tuple space", "PostgreSQL never physically removes old rows without an explicit DELETE statement", "Old versions are automatically deleted at COMMIT time, so VACUUM is unnecessary", "Row versioning only applies to indexes, not heap tuples"], "answer": "A", "topic": "T6"},{"id": 19, "question": "How does regular VACUUM help prevent transaction ID wraparound problems?", "options": ["It freezes old tuples (marking them as visible to all transactions) so their original transaction IDs no longer need to be tracked as the counter advances", "It has no relationship to wraparound — only VACUUM FREEZE does", "It deletes the transaction ID counter and resets it to zero", "It disables MVCC entirely"], "answer": "A", "topic": "T7"},{"id": 20, "question": "After editing postgresql.conf to change a setting that doesn't require a restart, which command applies the change without dropping connections?", "options": ["pg_ctl restart", "SELECT pg_reload_conf(); (or pg_ctl reload)", "DROP DATABASE and recreate it", "ALTER SYSTEM RESTART"], "answer": "B", "topic": "T1"},{"id": 21, "question": "In pg_stat_database, what do the xact_commit and xact_rollback columns tell you?", "options": ["The number of tables in the database", "The current number of active connections", "The total number of transactions that have committed vs. rolled back in that database", "The size of the database on disk"], "answer": "C", "topic": "T8"},{"id": 22, "question": "How does PostgreSQL typically handle a new client connection?", "options": ["All clients share one single backend process", "The postmaster forks a dedicated backend process for each connection", "Backends are created only for write queries, not reads", "Connections are handled entirely inside the WAL writer process"], "answer": "B", "topic": "T5"},{"id": 23, "question": "If a table `orders` exists in schema `sales` but not in `public`, and your search_path is `\"$user\", public`, what happens when you run `SELECT * FROM orders;` without qualifying the schema?", "options": ["It automatically finds it in the sales schema", "It silently returns zero rows", "It fails with 'relation does not exist' unless you qualify it as sales.orders or add sales to search_path", "PostgreSQL searches every schema in the database automatically"], "answer": "C", "topic": "T2"},{"id": 24, "question": "What does pg_hba.conf control?", "options": ["The location of the data directory", "The size of shared_buffers", "WAL archiving destinations", "Which client connections are permitted, and by which authentication method, based on address/database/user"], "answer": "D", "topic": "T1"},{"id": 25, "question": "Which function returns the on-disk size of a single table, in bytes?", "options": ["pg_database_size()", "pg_relation_size() only works on databases", "pg_stat_user_tables()", "pg_table_size()"], "answer": "D", "topic": "T8"},{"id": 26, "question": "What does the INHERIT attribute (the default) on a role control?", "options": ["Whether the role automatically has the privileges of roles it is a member of, without needing SET ROLE", "Whether the role can create new roles", "Whether the role's password expires", "Whether the role can bypass row-level security"], "answer": "A", "topic": "T3"},{"id": 27, "question": "What does pg_dumpall capture that a per-database pg_dump does not?", "options": ["Table row data only", "WAL files", "Index definitions only", "Cluster-wide objects like roles and tablespaces, across all databases"], "answer": "D", "topic": "T4"},{"id": 28, "question": "Which PostgreSQL transaction isolation level prevents non-repeatable reads by using a snapshot taken at the start of the transaction (not each statement)?", "options": ["READ COMMITTED", "READ UNCOMMITTED", "AUTOCOMMIT", "REPEATABLE READ"], "answer": "D", "topic": "T6"},{"id": 29, "question": "Which of these correctly distinguishes VACUUM FULL from plain VACUUM?", "options": ["They are functionally identical", "VACUUM FULL rewrites the entire table into a new file to reclaim space back to the OS (requiring an exclusive lock), while plain VACUUM reclaims space for reuse within the table without a full rewrite or exclusive lock", "VACUUM FULL only updates planner statistics", "VACUUM FULL is deprecated and no longer available"], "answer": "B", "topic": "T7"},{"id": 30, "question": "In pg_stat_all_tables (or pg_stat_user_tables), a table showing a high seq_scan count and near-zero idx_scan count most likely suggests:", "options": ["The table is perfectly indexed and optimized", "Queries against that table are doing sequential scans rather than using an index — possibly a missing or unused index", "The table has been vacuumed too often", "Autovacuum is disabled on that table"], "answer": "B", "topic": "T8"},{"id": 31, "question": "Which pg_hba.conf authentication method is the current recommended default for password-based authentication in PostgreSQL 18?", "options": ["scram-sha-256", "md5", "trust", "password"], "answer": "A", "topic": "T1"},{"id": 32, "question": "Which clause enforces that a column's value must be unique and not null, typically used for a table's primary key?", "options": ["DEFAULT", "CHECK", "UNLOGGED", "PRIMARY KEY"], "answer": "D", "topic": "T2"},{"id": 33, "question": "What is the role of shared_buffers?", "options": ["It's a per-session buffer for sorting only", "It's PostgreSQL's main shared memory cache for table and index data pages, reducing disk I/O", "It stores compiled query plans", "It is only used during VACUUM"], "answer": "B", "topic": "T1"},{"id": 34, "question": "How can pg_stat_all_indexes (or pg_stat_user_indexes) help you find unused indexes?", "options": ["It cannot — index usage isn't tracked", "It only tracks primary key indexes", "A very low or zero idx_scan count for an index over time suggests it's rarely or never used and may be a candidate for removal", "It reports index bloat percentage directly"], "answer": "C", "topic": "T8"},{"id": 35, "question": "Which postgresql.conf parameters point to the server's SSL certificate and private key for encrypting client connections?", "options": ["ssl_cert_file and ssl_key_file", "archive_command and archive_mode", "log_destination and log_directory", "wal_level and wal_sync_method"], "answer": "A", "topic": "T1"},{"id": 36, "question": "Which PostgreSQL data type is best suited for storing semi-structured data with indexing support for containment queries?", "options": ["jsonb", "text", "bytea", "xml"], "answer": "A", "topic": "T2"},{"id": 37, "question": "What kind of information does pg_stat_bgwriter historically provide?", "options": ["Row-level lock statistics", "Query text of slow queries", "Counts related to buffers written by the background writer/backends and checkpoint-related I/O statistics", "Replication lag in seconds"], "answer": "C", "topic": "T8"},{"id": 38, "question": "When a role creates a table, who owns it by default, and what privilege does that confer?", "options": ["The creating role owns it, and owners implicitly have all privileges on the object (can grant, alter, drop it)", "The public role owns it, granting all users full access", "No one owns it until explicitly assigned with ALTER TABLE OWNER TO", "The superuser always becomes the owner regardless of who ran CREATE TABLE"], "answer": "A", "topic": "T3"},{"id": 39, "question": "Which tool is used to restore a custom-format (-F c) pg_dump archive?", "options": ["pg_restore", "psql", "pg_basebackup", "pg_upgrade"], "answer": "A", "topic": "T4"},{"id": 40, "question": "Which pg_ctl subcommand stops and then starts the PostgreSQL server in one step?", "options": ["pg_ctl reload", "pg_ctl restart", "pg_ctl status", "pg_ctl promote"], "answer": "B", "topic": "T1"},{"id": 41, "question": "What's the difference between work_mem and maintenance_work_mem?", "options": ["They are identical settings under different names", "maintenance_work_mem controls shared_buffers sizing", "work_mem bounds memory for operations like sorts/hash joins per query operation; maintenance_work_mem bounds memory for maintenance operations like VACUUM, CREATE INDEX, and ALTER TABLE", "work_mem only applies to autovacuum"], "answer": "C", "topic": "T8"},{"id": 42, "question": "Which of these is an example of a row-level lock rather than a table-level lock?", "options": ["The lock acquired by SELECT ... FOR UPDATE on the rows it selects", "ACCESS EXCLUSIVE from ALTER TABLE", "LOCK TABLE ... IN ACCESS SHARE MODE", "A lock taken during CREATE INDEX (non-concurrent)"], "answer": "A", "topic": "T5"},{"id": 43, "question": "At a high level, how does the autovacuum daemon decide when to vacuum a table?", "options": ["It vacuums every table on a fixed nightly schedule regardless of activity", "The autovacuum launcher periodically wakes (per autovacuum_naptime) and triggers workers on tables whose dead tuple count exceeds a threshold based on autovacuum_vacuum_threshold and autovacuum_vacuum_scale_factor", "It only runs when a superuser manually triggers it", "It vacuums only system catalogs, never user tables"], "answer": "B", "topic": "T7"},{"id": 44, "question": "Since PostgreSQL 17, checkpoint-related statistics that used to live in pg_stat_bgwriter were moved to which dedicated view?", "options": ["pg_stat_io", "pg_stat_checkpointer", "pg_stat_wal", "pg_stat_database_conflicts"], "answer": "B", "topic": "T8"},{"id": 45, "question": "A SQL Server developer new to PostgreSQL writes `SELECT first_name + ' ' + last_name FROM employees;` and gets a type error. What's the correct PostgreSQL equivalent?", "options": ["SELECT first_name || ' ' || last_name FROM employees;", "SELECT first_name . ' ' . last_name FROM employees;", "SELECT CONCAT_WS(first_name, ' ', last_name) FROM employees;", "SELECT first_name & ' ' & last_name FROM employees;"], "answer": "A", "topic": "T2"},{"id": 46, "question": "On a systemd-based Linux distribution, which command would you use to enable PostgreSQL to start automatically at boot?", "options": ["pg_ctl enable postgresql", "systemctl enable postgresql", "initdb --autostart", "postgres --enable-boot"], "answer": "B", "topic": "T1"},{"id": 47, "question": "What must you do to enable pg_stat_statements for tracking query performance?", "options": ["Nothing — it's on by default in every PostgreSQL installation", "Set track_activities = on only", "Add pg_stat_statements to shared_preload_libraries (and restart), then run CREATE EXTENSION pg_stat_statements;", "It can only be enabled via a third-party monitoring agent"], "answer": "C", "topic": "T8"},{"id": 48, "question": "Which process is responsible for periodically flushing all dirty shared buffers to disk at a checkpoint, as opposed to the background writer's incremental flushing between checkpoints?", "options": ["The autovacuum launcher", "The WAL sender", "The checkpointer", "The stats collector"], "answer": "C", "topic": "T5"},{"id": 49, "question": "When you run `CREATE INDEX idx_name ON mytable (col);` without specifying a method, which index type is created by default?", "options": ["hash", "gin", "btree", "brin"], "answer": "C", "topic": "T2"},{"id": 50, "question": "What does the pg_isready utility check?", "options": ["Whether the PostgreSQL server is accepting connections", "Whether a specific table has bloat", "Whether WAL archiving is up to date", "Whether autovacuum is currently running"], "answer": "A", "topic": "T1"},{"id": 51, "question": "In pg_stat_statements, which column tells you the average execution time per call for a normalized query?", "options": ["mean_exec_time", "calls", "total_exec_time", "rows"], "answer": "A", "topic": "T8"},{"id": 52, "question": "What does pg_basebackup produce?", "options": ["A logical SQL dump of table contents", "A schema-only export", "A compressed export of just the WAL archive", "A physical, file-level copy of the entire data directory, suitable as a base for PITR or a replica"], "answer": "D", "topic": "T4"},{"id": 53, "question": "Which system view would you query to see currently held and waiting locks, including which are blocking which?", "options": ["pg_stat_activity only", "pg_stat_database", "pg_locks", "pg_settings"], "answer": "C", "topic": "T8"},{"id": 54, "question": "What does autovacuum_vacuum_scale_factor represent?", "options": ["A fixed number of dead rows that triggers a vacuum, ignoring table size", "A fraction of the table's total row count (added to autovacuum_vacuum_threshold) that determines how many dead tuples trigger an autovacuum run", "The percentage of CPU autovacuum is allowed to use", "The number of autovacuum worker processes allowed cluster-wide"], "answer": "B", "topic": "T7"},{"id": 55, "question": "Which statement grants SELECT and INSERT privileges on a table to a role?", "options": ["ALLOW SELECT, INSERT ON mytable TO myrole;", "GRANT myrole SELECT, INSERT ON mytable;", "SET PRIVILEGES SELECT, INSERT ON mytable FOR myrole;", "GRANT SELECT, INSERT ON mytable TO myrole;"], "answer": "D", "topic": "T3"},{"id": 56, "question": "Which of these is a valid value for log_destination?", "options": ["binarylog", "xmllog", "netlog", "jsonlog"], "answer": "D", "topic": "T8"},{"id": 57, "question": "What is PostgreSQL's typical major release cadence and support window?", "options": ["A new major version every 5 years, supported indefinitely", "A new major version every month", "A new major version roughly every year, with each version supported for about 5 years", "Major versions are retired after 6 months"], "answer": "C", "topic": "T1"},{"id": 58, "question": "What is the key functional difference between a regular VIEW and a MATERIALIZED VIEW?", "options": ["A materialized view updates automatically in real time; a regular view does not", "There is no functional difference, only naming", "A regular view always reflects live underlying data on every query; a materialized view stores a snapshot that must be refreshed with REFRESH MATERIALIZED VIEW to update", "A regular view can be indexed; a materialized view cannot"], "answer": "C", "topic": "T2"},{"id": 59, "question": "Why does PostgreSQL use Write-Ahead Logging (WAL)?", "options": ["To ensure durability and crash recovery by recording changes before they're applied to data files, so committed transactions survive a crash", "To speed up SELECT queries only", "To replace the need for shared_buffers", "It's used exclusively for logical replication and has no other purpose"], "answer": "A", "topic": "T5"},{"id": 60, "question": "Which log_min_messages value would show more detail: DEBUG1 or WARNING?", "options": ["WARNING shows strictly more detail than DEBUG1", "DEBUG1 shows more detail (lower severity threshold) than WARNING, which only logs warnings and more severe messages", "They log identical amounts of detail", "log_min_messages has no effect on verbosity"], "answer": "B", "topic": "T8"},{"id": 61, "question": "What is required to apply a PostgreSQL minor version update (e.g. 18.1 to 18.2)?", "options": ["A full pg_dump and restore into a new cluster", "Installing the new minor version binaries and restarting the server — no dump/restore or pg_upgrade needed", "Running pg_upgrade in link mode", "Rebuilding all indexes manually"], "answer": "B", "topic": "T1"},{"id": 62, "question": "To enable continuous WAL archiving, which two settings must typically be configured together?", "options": ["archive_mode = on and a working archive_command", "shared_buffers and work_mem", "log_statement and log_duration", "autovacuum and vacuum_cost_delay"], "answer": "A", "topic": "T4"},{"id": 63, "question": "What does the deadlock_timeout parameter control?", "options": ["How long a transaction can run before being auto-committed", "How long a backend waits for a lock before PostgreSQL checks for a deadlock condition", "The maximum lifetime of a WAL segment", "How often autovacuum checks for bloat"], "answer": "B", "topic": "T5"},{"id": 64, "question": "Which function both advances a sequence and returns its new value?", "options": ["nextval()", "currval()", "setval()", "lastval() without prior nextval in session"], "answer": "A", "topic": "T2"},{"id": 65, "question": "What does the `VACUUM (SKIP_LOCKED)` option do?", "options": ["It skips relations that cannot be locked immediately (e.g. already locked by another process), rather than waiting, allowing the vacuum run to continue with other tables", "It is not a valid VACUUM option", "It permanently skips vacuuming any row that has ever been locked", "It disables all locking for the duration of the VACUUM"], "answer": "A", "topic": "T7"},{"id": 66, "question": "What does setting log_error_verbosity = verbose add to log entries compared to default?", "options": ["Nothing different from terse", "It adds the source code file name, function name, and line number that generated the log message, in addition to the default detail", "It suppresses all but error-level messages", "It switches the log format to JSON"], "answer": "B", "topic": "T8"},{"id": 67, "question": "Which of these is NOT one of the standard methods for performing a major version upgrade of PostgreSQL?", "options": ["pg_upgrade", "Dump and restore (pg_dump/pg_dumpall + restore)", "Logical replication to a new-version cluster, then switchover", "In-place minor patching via apt/yum update alone"], "answer": "D", "topic": "T1"},{"id": 68, "question": "What is the role of the WAL writer process?", "options": ["It writes table data pages to disk", "It only runs during a base backup", "It handles client authentication over SSL", "It periodically flushes WAL data from wal_buffers (in-memory) to disk, even between transaction commits"], "answer": "D", "topic": "T5"},{"id": 69, "question": "What does setting log_min_duration_statement = 1000 do?", "options": ["Logs every statement, regardless of duration", "Prevents any statement from running longer than 1 second", "Logs only statements that take 1000 milliseconds (1 second) or longer to execute", "Sets the connection timeout to 1000ms"], "answer": "C", "topic": "T8"},{"id": 70, "question": "What is a key difference between a PostgreSQL FUNCTION and a PROCEDURE?", "options": ["Only a PROCEDURE can be invoked with CALL and can manage its own transactions (COMMIT/ROLLBACK inside it); a FUNCTION is invoked with SELECT and cannot control transactions", "FUNCTIONs cannot return values", "PROCEDUREs cannot take parameters", "They are identical in every respect"], "answer": "A", "topic": "T2"},{"id": 71, "question": "Since PostgreSQL 15, what changed about the default privileges on the `public` schema for newly created databases?", "options": ["Nothing changed; PUBLIC has always had CREATE on the public schema", "The public schema was removed entirely", "The PUBLIC role no longer has CREATE privilege on the public schema by default — only the database owner does, unless explicitly granted", "All roles now automatically get superuser rights in the public schema"], "answer": "C", "topic": "T3"},{"id": 72, "question": "What does pg_upgrade's link mode (--link) do differently from its default copy mode?", "options": ["It copies all data files to the new cluster, doubling disk usage temporarily", "It performs the upgrade entirely over network replication", "It skips upgrading system catalogs", "It hard-links data files between old and new clusters instead of copying them, making the upgrade much faster but preventing the old cluster from being used independently afterward"], "answer": "D", "topic": "T1"},{"id": 73, "question": "What do log_rotation_age and log_rotation_size control together?", "options": ["How long autovacuum waits between runs", "When the logging collector starts a new log file — either after a time interval or once the current file reaches a size threshold", "How long WAL segments are retained", "The maximum number of concurrent connections logged"], "answer": "B", "topic": "T8"},{"id": 74, "question": "At a conceptual level, what does Point-in-Time Recovery (PITR) let you do?", "options": ["Instantly roll back a single transaction without touching the rest of the database", "Restore a base backup and then replay archived WAL up to a specific target time/LSN/transaction, rather than only to the moment the backup was taken", "Recover deleted rows from the buffer cache without any backup", "Skip WAL replay entirely for faster restores"], "answer": "B", "topic": "T4"},{"id": 75, "question": "Under the default READ COMMITTED isolation level, when does a transaction acquire a new MVCC snapshot?", "options": ["Once, at BEGIN, for the life of the transaction", "At the start of each individual statement, so later statements can see rows committed by other transactions in the meantime", "Only at COMMIT", "It never takes a snapshot — it always reads current heap state directly"], "answer": "B", "topic": "T6"},{"id": 76, "question": "How can you override autovacuum's scale factor for one specific high-churn table without changing the cluster-wide default in postgresql.conf?", "options": ["ALTER TABLE mytable SET (autovacuum_vacuum_scale_factor = 0.01);", "It cannot be done per table — it's a global setting only", "SET autovacuum_vacuum_scale_factor = 0.01; in your session before running queries", "Rename the table to trigger a config reload"], "answer": "A", "topic": "T7"},{"id": 77, "question": "In PostgreSQL 18, when `io_method = worker` is configured, what `backend_type` value would you expect to see in `pg_stat_activity` for the processes handling asynchronous I/O?", "options": ["client backend", "checkpointer", "autovacuum launcher", "IO Worker"], "answer": "D", "topic": "T5"},{"id": 78, "question": "In PostgreSQL, what is the difference between LIKE and ILIKE, and how do single vs. double quotes differ?", "options": ["LIKE is case-insensitive and ILIKE is case-sensitive; quotes are interchangeable", "LIKE and ILIKE are identical; double quotes delimit strings", "ILIKE only works on numeric columns", "ILIKE is a case-insensitive pattern match (LIKE is case-sensitive); single quotes delimit string literals while double quotes delimit identifiers"], "answer": "D", "topic": "T2"},{"id": 79, "question": "What is the default TCP port PostgreSQL listens on?", "options": ["1433", "3306", "8080", "5432"], "answer": "D", "topic": "T1"},{"id": 80, "question": "Setting log_statement = 'ddl' will log which kinds of statements?", "options": ["Only SELECT statements", "Every single statement executed, including SELECTs", "Data definition statements like CREATE, ALTER, DROP (but not ordinary DML like INSERT/UPDATE)", "Nothing — 'ddl' is not a valid value"], "answer": "C", "topic": "T8"}], "topics": {"T1": "Installation, Versioning & Basic Configuration", "T2": "Connecting to PostgreSQL, Database Objects & Basic SQL", "T3": "Roles & Privileges", "T4": "Backup & Recovery", "T5": "Server Architecture & Background Processes", "T6": "MVCC & Transaction Management", "T7": "VACUUM, ANALYZE & Autovacuum", "T8": "Monitoring & Logging"}};
+
+        const quizVersions = {
+            original: { name: 'AI Generated test questions', data: embeddedQuizData },
+            pavlo: { name: 'Youtube content from Pavlo Golub', data: pavloQuizData }
+        };
+
+        function storageKey(kind) {
+            const originalKey = kind === 'history' ? 'quizHistory' : 'quizInProgress';
+            return activeQuizId === 'original' ? originalKey : `${originalKey}:${activeQuizId}`;
+        }
+
+        function loadQuizData() {
+            const picker = document.getElementById('quizVersion');
+            for (const [versionId, version] of Object.entries(quizVersions)) {
+                picker.add(new Option(version.name, versionId));
+            }
+            const savedVersion = localStorage.getItem('selectedQuizVersion');
+            changeQuiz(Object.hasOwn(quizVersions, savedVersion) ? savedVersion : 'original');
+        }
+
+        function changeQuiz(versionId) {
+            if (!Object.hasOwn(quizVersions, versionId)) return;
+            if (quizData && !quizSubmitted) saveAnswersProgress();
+            activeQuizId = versionId;
+            quizData = quizVersions[versionId].data;
+            answers = {};
+            initializeQuiz();
+            loadSavedAnswers();
+            document.getElementById('quizVersion').value = versionId;
+            document.getElementById('quizTitle').textContent = quizVersions[versionId].name;
+            document.getElementById('quizSummary').textContent = `${quizData.questions.length} Multiple Choice Questions | ${Object.keys(quizData.topics).length} Domains`;
+            document.title = `PostgreSQL DBA-1 | ${quizVersions[versionId].name}`;
+            localStorage.setItem('selectedQuizVersion', versionId);
+            displayQuestion();
+        }
+
+        function initializeQuiz() {
+            if (Object.keys(answers).length === 0) {
+                answers = {};
+            }
+            currentQuestion = 0;
+            quizSubmitted = false;
+            document.getElementById('resultsContainer').style.display = 'none';
+            switchTab('quiz');
+        }
+
+        function loadSavedAnswers() {
+            const saved = localStorage.getItem(storageKey('progress'));
+            if (saved) {
+                try {
+                    const state = JSON.parse(saved);
+                    answers = state.answers || {};
+                    currentQuestion = state.currentQuestion || 0;
+                } catch (e) {
+                    answers = {};
+                    currentQuestion = 0;
+                }
+            }
+        }
+
+        function saveAnswersProgress() {
+            localStorage.setItem(storageKey('progress'), JSON.stringify({
+                answers: answers,
+                currentQuestion: currentQuestion
+            }));
+        }
+
+        function displayQuestion() {
+            if (!quizData || !quizData.questions[currentQuestion]) return;
+
+            const q = quizData.questions[currentQuestion];
+            const progress = ((currentQuestion + 1) / quizData.questions.length) * 100;
+
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('questionNumber').innerText = `Question ${currentQuestion + 1} of ${quizData.questions.length} (Topic: ${q.topic})`;
+            document.getElementById('questionText').innerText = q.question;
+
+            const optionsContainer = document.getElementById('optionsContainer');
+            optionsContainer.innerHTML = '';
+
+            const optionLetters = ['A', 'B', 'C', 'D'];
+            q.options.forEach((option, index) => {
+                const letter = optionLetters[index];
+                const isSelected = answers[currentQuestion] === letter;
+                const optionDiv = document.createElement('div');
+                optionDiv.className = `option ${isSelected ? 'selected' : ''}`;
+                optionDiv.innerHTML = `
+                    <input type="radio" name="option" value="${letter}" id="opt${letter}" ${isSelected ? 'checked' : ''} 
+                           onchange="selectOption('${letter}')">
+                    <label for="opt${letter}" class="option-label"><strong>${letter}.</strong> ${option}</label>
+                `;
+                optionsContainer.appendChild(optionDiv);
+            });
+
+            updateButtons();
+        }
+
+        function selectOption(letter) {
+            answers[currentQuestion] = letter;
+            saveAnswersProgress();
+            displayQuestion();
+        }
+
+        function nextQuestion() {
+            if (currentQuestion < quizData.questions.length - 1) {
+                currentQuestion++;
+                saveAnswersProgress();
+                displayQuestion();
+                document.getElementById('quizContainer').scrollTop = 0;
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                saveAnswersProgress();
+                displayQuestion();
+                document.getElementById('quizContainer').scrollTop = 0;
+            }
+        }
+
+        function updateButtons() {
+            document.getElementById('prevBtn').disabled = currentQuestion === 0;
+            document.getElementById('nextBtn').style.display = currentQuestion < quizData.questions.length - 1 ? 'block' : 'none';
+            document.getElementById('submitBtn').style.display = currentQuestion === quizData.questions.length - 1 ? 'block' : 'none';
+        }
+
+        function submitQuiz() {
+            const unanswered = [];
+            for (let i = 0; i < quizData.questions.length; i++) {
+                if (!answers[i]) unanswered.push(i + 1);
+            }
+
+            if (unanswered.length > 0) {
+                alert(`You have ${unanswered.length} unanswered question(s): ${unanswered.join(', ')}. Please answer all questions before submitting.`);
+                return;
+            }
+
+            quizSubmitted = true;
+            gradeQuiz();
+        }
+
+        function gradeQuiz() {
+            let score = 0;
+            const topicScores = {};
+
+            for (const [topicCode, topicName] of Object.entries(quizData.topics)) {
+                topicScores[topicCode] = { correct: 0, total: 0 };
+            }
+
+            quizData.questions.forEach((q, index) => {
+                const userAnswer = answers[index];
+                const isCorrect = userAnswer === q.answer;
+                if (isCorrect) score++;
+
+                topicScores[q.topic].total++;
+                if (isCorrect) topicScores[q.topic].correct++;
+            });
+
+            const percentage = ((score / quizData.questions.length) * 100).toFixed(2);
+            const timestamp = new Date().toLocaleString();
+            const result = {
+                quizId: activeQuizId,
+                timestamp,
+                score,
+                total: quizData.questions.length,
+                percentage: parseFloat(percentage),
+                topicScores,
+                answers
+            };
+
+            saveResult(result);
+            localStorage.removeItem(storageKey('progress'));
+            displayResults(result);
+            switchTab('results');
+        }
+
+        function displayResults(result) {
+            document.getElementById('resultsContainer').style.display = 'block';
+            document.getElementById('finalScore').innerText = `${result.score}/${result.total}`;
+            document.getElementById('finalPercentage').innerText = `${result.percentage}%`;
+
+            const topicsBreakdown = document.getElementById('topicsBreakdown');
+            topicsBreakdown.innerHTML = '';
+
+            for (const [topicCode, scores] of Object.entries(result.topicScores)) {
+                const percentage = scores.total > 0 ? (scores.correct / scores.total) * 100 : 0;
+                const topicDiv = document.createElement('div');
+                topicDiv.className = 'topic-card';
+                topicDiv.innerHTML = `
+                    <div class="topic-title">${topicCode}</div>
+                    <div class="topic-score">${scores.correct}/${scores.total}</div>
+                    <div class="topic-bar">
+                        <div class="topic-bar-fill" style="width: ${percentage}%"></div>
+                    </div>
+                    <small>${quizData.topics[topicCode]}</small>
+                `;
+                topicsBreakdown.appendChild(topicDiv);
+            }
+
+            const missedList = document.getElementById('missedQuestionsList');
+            missedList.innerHTML = '';
+
+            quizData.questions.forEach((q, index) => {
+                const userAnswer = result.answers[index];
+                const isCorrect = userAnswer === q.answer;
+
+                const itemDiv = document.createElement('details');
+                itemDiv.className = `missed-question ${isCorrect ? 'correct' : ''}`;
+                const summary = document.createElement('summary');
+                summary.className = 'missed-q-number';
+                summary.textContent = `Q${q.id}: ${q.question}`;
+                itemDiv.appendChild(summary);
+
+                const answerInfo = document.createElement('div');
+                answerInfo.className = 'answer-info';
+                answerInfo.textContent = `Your Answer: ${userAnswer || 'Unanswered'} | Correct Answer: ${q.answer}`;
+                itemDiv.appendChild(answerInfo);
+
+                const choices = document.createElement('fieldset');
+                choices.className = 'review-choices';
+                const legend = document.createElement('legend');
+                legend.textContent = q.question;
+                choices.appendChild(legend);
+
+                q.options.forEach((option, optionIndex) => {
+                    const letter = ['A', 'B', 'C', 'D'][optionIndex];
+                    const selected = letter === userAnswer;
+                    const correct = letter === q.answer;
+                    const label = document.createElement('label');
+                    label.className = `review-option${selected ? ' selected' : ''}${correct ? ' correct-answer' : ''}`;
+                    const input = document.createElement('input');
+                    input.type = 'radio';
+                    input.name = `review-${q.id}`;
+                    input.checked = selected;
+                    input.disabled = true;
+                    const text = document.createElement('span');
+                    text.textContent = `${letter}. ${option}`;
+                    const status = document.createElement('strong');
+                    status.textContent = selected && correct ? ' (Your answer, correct)' : selected ? ' (Your answer)' : correct ? ' (Correct answer)' : '';
+                    text.appendChild(status);
+                    label.append(input, text);
+                    choices.appendChild(label);
+                });
+                itemDiv.appendChild(choices);
+                missedList.appendChild(itemDiv);
+            });
+
+            if (quizData.questions.length === 0) {
+                missedList.innerHTML = '<p style="text-align: center; color: #999;">No questions to review!</p>';
+            }
+        }
+
+        function saveResult(result) {
+            let history = JSON.parse(localStorage.getItem(storageKey('history')) || '[]');
+            history.push(result);
+            localStorage.setItem(storageKey('history'), JSON.stringify(history));
+        }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem(storageKey('history')) || '[]');
+            const historyBody = document.getElementById('historyBody');
+            historyBody.innerHTML = '';
+
+            if (history.length === 0) {
+                historyBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="empty-state">
+                            <h2 style="color: #333; margin-bottom: 10px;">No attempts yet</h2>
+                            <p>Complete a quiz to see your history here.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            history.forEach((result, index) => {
+                const percentage = result.percentage;
+                let badgeClass = 'low';
+                if (percentage >= 80) badgeClass = 'high';
+                else if (percentage >= 70) badgeClass = 'medium';
+
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${result.timestamp}</td>
+                    <td>${result.score}/${result.total}</td>
+                    <td><span class="score-badge ${badgeClass}">${result.percentage}%</span></td>
+                    <td><button class="btn-secondary" onclick="viewAttempt(${index})" style="margin: 0; padding: 6px 12px; font-size: 12px;">View</button></td>
+                `;
+                historyBody.appendChild(row);
+            });
+        }
+
+        function viewAttempt(index) {
+            const history = JSON.parse(localStorage.getItem(storageKey('history')) || '[]');
+            history.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            const result = history[index];
+            displayResults(result);
+            switchTab('results');
+        }
+
+        function clearHistory() {
+            if (confirm(`Clear history for ${quizVersions[activeQuizId].name}? This cannot be undone.`)) {
+                localStorage.removeItem(storageKey('history'));
+                loadHistory();
+            }
+        }
+
+        function retakeQuiz() {
+            localStorage.removeItem(storageKey('progress'));
+            answers = {};
+            initializeQuiz();
+            displayQuestion();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+
+            document.getElementById(tabName).classList.add('active');
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+
+            if (tabName === 'history') {
+                loadHistory();
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', loadQuizData);
+    </script>
+</body>
+</html>

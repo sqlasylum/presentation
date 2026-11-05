@@ -1,0 +1,285 @@
+﻿Here is the question/cram list for the DBA PG test.
+
+
+Domain 1 
+
+
+
+
+Q: You need PostgreSQL 16 and 18 installed on the same host. Which repository supports that?
+A: PGDG carries every supported major version side by side; a distribution repository ships one.
+
+
+Q: After installing the packages on Rocky Linux, psql reports "connection refused." What step is missing?
+A: The cluster was never initialized. Run the packaged initdb setup, then enable and start the service. Debian does this for you; Red Hat does not.
+
+
+Q: You are on a host you did not build and need to find the configuration file actually in use. What do you run?
+A: Run SHOW config_file; use SHOW data_directory; and SHOW hba_file; for the other paths. Run pg_config --bindir for the binaries.
+
+
+Q: What is stored in global/ that is not in base/?
+A: The cluster-wide catalogs shared by every database, including roles and tablespaces. base/ holds one subdirectory of relation files per database.
+
+
+Q: Name the two tablespaces that exist in every cluster.
+A: pg_default, for ordinary objects, and pg_global, for the shared catalogs 
+
+
+TRUST uses SHOW, not a file.
+
+
+Q: You changed shared_buffers and reloaded, but SHOW still reports the old value. Why?
+A: shared_buffers has postmaster context, so it requires a full restart. pg_settings.pending_restart lists parameters still waiting for a restart.
+
+
+pg_hba.conf uses the first matching entry.
+
+
+Q: A permissive trust line sits above your scram-sha-256 rule for the same address. Which one applies?
+A: The trust line applies. PostgreSQL stops at the first matching rule, so the stricter rule below is never evaluated.
+
+
+Q: Which sslmode both encrypts the connection and proves you reached the intended server?
+A: verify-full requires encryption and validates the certificate and hostname. verify-ca validates the CA but not the hostname.
+Q: Why might systemctl report the service as inactive while psql connects successfully?
+A: The cluster was started directly with pg_ctl, so systemd does not manage it and will not restart it on boot.
+
+
+Q: pg_isready exits with 1. What does that tell you, and how does it differ from exit code 2?
+A: Exit code 1 means the server responded but is rejecting connections, typically because it is still starting or in recovery. Exit code 2 means nothing responded.
+
+
+Q: How long is a major version supported, and what happens when that support period ends?
+A: Five years from release. After that, no further fixes are issued, including security fixes.
+
+
+Q: Does a minor update require pg_upgrade or a dump and restore?
+A: Neither. Update the packages and restart. Read the release notes; some fixes occasionally require a manual follow-up, such as reindexing.
+
+
+Q: Which method completes in minutes, almost regardless of database size, and why?
+A: pg_upgrade, especially with --link or --clone, because it rewrites the catalogs and reuses the existing data files instead of copying rows.
+
+
+Q: Which method leaves you unable to fall back to the old cluster?
+A: pg_upgrade with --link. The two clusters share files, so once the new one starts, the old one is no longer safe to use.
+
+
+Domain 2 
+
+
+Q: Where should a password be placed so it is not exposed?
+A: Store it in a password file, ~/.pgpass, with mode 0600 (on Unix, a less restrictive mode causes the file to be ignored), or let psql prompt for it. The documentation advises against using PGPASSWORD because, on some systems, ps can show it to other users.
+
+
+Q: Which meta-command shows a table’s columns, indexes, and constraints?
+A: Use \d tablename. Append + for more detail, such as column comments (\dt+ adds sizes). \? lists every meta-command; \h gives SQL syntax help.
+
+
+Q: You installed an extension into template1. What happens to databases created afterward?
+A: Every database created afterward from template1, the default template, gets a copy of it. Use TEMPLATE template0 when you need a pristine database.
+
+
+Q: With the default search_path of "$user", public, where does an unqualified CREATE TABLE place the table?
+A: In the schema named after your role, if that schema exists; otherwise, in public. The first schema in the path that exists is the target, and you still need CREATE privilege on it.
+
+
+Q: Which ALTER TABLE operations avoid rewriting the whole table?
+A: Adding a nullable column or one with a nonvolatile default avoids a rewrite in PostgreSQL 11 and later. Most column type changes rewrite the table and its indexes.
+
+
+Q: Which type should hold a monetary amount, and which types should be avoided?
+A: numeric is the type the documentation recommends for monetary amounts, for example, numeric(12,2). Avoid real and double precision; they are inexact, so some values are stored only as approximations.
+
+
+Q: How does SELECT "total" differ from SELECT 'total'?
+A: Double quotes delimit an identifier, so PostgreSQL looks for a column called total. Single quotes delimit a string literal.
+
+
+Q: Name the six built-in index types, and say what a failed CREATE INDEX CONCURRENTLY leaves behind.
+A: B-tree, hash, GiST, SP-GiST, GIN, and BRIN. A failed operation can leave an invalid index; drop it and retry, or rebuild it with REINDEX INDEX CONCURRENTLY.
+
+
+Q: What does REFRESH MATERIALIZED VIEW CONCURRENTLY require?
+A: It requires at least one unique index on the materialized view that uses only column names, with no expression or WHERE clause. The view must already be populated. Without such an index, only a plain refresh works, and it can block readers.
+
+
+Q: Why do sequence-generated IDs contain gaps?
+A: nextval() is never rolled back, so concurrent transactions do not block it. A number taken by a transaction that aborts is not reused. With a cache above 1, numbers reserved but never used by a session are also lost when it ends.
+
+
+Q: Which of the two can commit inside itself, and how is it invoked?
+A: A procedure, invoked with CALL, can do so as long as the CALL is not inside a transaction block and the procedure is not SECURITY DEFINER. A function runs in the caller’s transaction, so it cannot start or end one.
+
+
+Domain 3 
+
+
+Grant privileges to groups, not individuals.
+
+
+Q: How does CREATE USER differ from CREATE ROLE?
+A: Only their defaults differ: CREATE USER assumes LOGIN, while CREATE ROLE assumes NOLOGIN. Both create the same object: a role.
+
+
+Q: Since version 16, what can a CREATEROLE role do to roles it did not create?
+A: Nothing unless it holds ADMIN OPTION on them. It gets ADMIN OPTION automatically only on roles it creates, and it cannot grant or revoke REPLICATION or BYPASSRLS.
+
+
+Q: You revoke every privilege from a role, but it can still drop the table. Why?
+A: The role owns the table. The right to alter or drop an object comes with ownership, not a grant, so it cannot be revoked. Change the owner or reassign ownership of the objects, then drop the role.
+
+
+Q: SELECT was granted on all tables, yet a table created today is inaccessible. What fixes it?
+A: Grant privileges on the new table now (rerunning the grant on all tables works, too). For tables created later, use ALTER DEFAULT PRIVILEGES for the role that creates them. It does not affect tables that already exist.
+
+
+Q: What changed about the public schema in PostgreSQL 15?
+A: CREATE is no longer granted to PUBLIC by default, so only the database owner can create objects there; everyone still has USAGE. Databases upgraded from version 14 or earlier keep the old grant.
+
+
+Domain 4 
+
+
+Logical backups are sets of instructions; physical backups are copies of the data files.
+
+
+Q: Which backup type can restore a single table into a newer major version?
+A: A logical backup. A physical backup restores the whole cluster onto the same major version and is the only route to point-in-time recovery.
+
+
+Q: What does pg_dump not include, and what do you run to capture it?
+A: Roles and tablespaces, because they are cluster-wide rather than part of any one database. Run pg_dumpall --globals-only alongside it.
+
+
+Q: You hold a custom-format dump. Which tool restores it, and what does ON_ERROR_STOP change for a psql restore?
+A: pg_restore restores custom-format dumps; psql replays only plain SQL dumps. ON_ERROR_STOP makes psql stop at the first error and exit with status 3, but the restore is still partial. For an all-or-nothing restore, add -1 (--single-transaction).
+
+
+Q: Why does -X stream matter?
+A: A second connection streams the WAL written during the copy, so the backup can be used on its own. With -X none, the backup needs WAL from an archive.
+
+
+Q: What must archive_command return, and what happens if it reports success incorrectly?
+A: It must return zero only when the segment is safely stored. A false success breaks the archive chain because PostgreSQL then removes or recycles the segment. A nonzero code makes PostgreSQL retry while pg_wal keeps growing.
+
+
+Q: What two things must already exist before PITR is possible? 
+Q: What two things must already exist before PITR is possible?
+A: A base backup and an unbroken chain of archived WAL from the start of that backup to the target moment.
+
+
+Domain 5 
+
+
+Q: Does the postmaster execute your queries?
+A: No. It listens on the port, starts one backend process per connection, and supervises the background processes. Each query runs in the client’s own backend.
+
+
+Q: Is the checkpointer governed by max_worker_processes?
+A: No. That setting limits background workers: parallel workers, logical replication workers, and those registered by extensions. Auxiliary processes such as the checkpointer start regardless.
+
+
+Q: Why is an idle connection not free?
+A: Each connection is its own operating-system backend process with private memory, and it holds a connection slot even when idle. The answer to serving many clients is a connection pooler, not a much larger max_connections.
+
+
+Q: What does it mean for a page in shared buffers to be dirty?
+A: It has been changed in memory but not yet written to disk. That is safe because the WAL record describing the change reaches the disk first.
+
+
+Q: Is work_mem a per-connection limit?
+A: No. It applies per sort or hash operation, and hash operations may use work_mem * hash_mem_multiplier. One query may use it several times, and every concurrent query and parallel worker does the same.
+
+
+Q: Which of the three writers signals a tuning problem?
+A: A client backend writing dirty buffers itself. Many such writes suggest shared_buffers or checkpoint settings need tuning, and the queries pay for those writes.
+
+
+Q: Which reaches durable storage first, the data page or the WAL record?
+A: The WAL record. That ordering makes crash recovery possible and is what the name write-ahead refers to.
+
+
+Q: What does synchronous_commit = off put at risk?
+A: The most recent commits, which a crash can lose (at most about three times wal_writer_delay). It does not risk database inconsistency.
+
+
+Domain 6 
+
+
+Q: Why does a long-running report not block concurrent updates?
+A: An update adds a new row version instead of changing the old one in place, and each statement reads through a snapshot. Reading a row and writing it do not conflict.
+
+
+Q: You deleted a million rows, but the file did not shrink. Why?
+A: DELETE only marks row versions as deleted. Standard VACUUM later makes that space reusable inside the table; it does not return it to the operating system, except for empty pages at the end of the table.
+
+
+Q: What is the default isolation level, and what can change under it mid-transaction?
+A: READ COMMITTED. Each statement takes a fresh snapshot, so changes committed by others between your statements become visible.
+
+
+Q: Which lock mode conflicts with a plain SELECT?
+A: ACCESS EXCLUSIVE, taken by DROP TABLE, TRUNCATE, and many forms of ALTER TABLE. It is the only table-level mode that conflicts with ACCESS SHARE.
+
+
+Q: Which column in pg_locks identifies a waiting session, and what function names its blocker?
+A: granted = false identifies a waiting session. pg_blocking_pids(pid) returns the blocking process IDs directly.
+
+
+Q: How does PostgreSQL detect a deadlock?
+A: A session that has waited longer than deadlock_timeout runs the check. If a cycle exists, one transaction is aborted; otherwise, it keeps waiting.
+
+
+Domain 7 
+
+
+Q: Why does PostgreSQL need VACUUM, and which kind returns space to the operating system?
+A: VACUUM serves four purposes: reusing the space occupied by dead row versions, updating planner statistics (the ANALYZE step), maintaining the visibility map, and preventing transaction ID wraparound. Only VACUUM FULL, which rewrites the table, returns space to the operating system.
+
+
+Q: What does PostgreSQL do if freezing falls critically far behind?
+A: It launches an anti-wraparound autovacuum even if autovacuum is disabled, issues warnings, and, at the limit, refuses to assign new transaction IDs. Only read-only transactions can start.
+
+
+Q: Which VACUUM variant returns disk space to the operating system, and at what cost?
+A: VACUUM FULL rewrites the table into a new file under an ACCESS EXCLUSIVE lock, which blocks all reads and writes. It also needs room for the new copy until it completes.
+
+
+Q: What triggers autovacuum on a table?
+A: Autovacuum is triggered when the number of dead rows since the last vacuum passes a base threshold plus a scale factor multiplied by the table’s row count, so a large table needs far more dead rows to trigger it. Inserted rows have a similar trigger.
+
+
+Q: Which two parameters set the vacuum trigger, and what are their defaults?
+A: autovacuum_vacuum_threshold defaults to 50, and autovacuum_vacuum_scale_factor defaults to 0.2. Autoanalyze has an equivalent pair, with defaults of 50 and 0.1.
+Q: Which columns show that autovacuum is falling behind on a table?
+A: A rising n_dead_tup relative to n_live_tup, together with an old last_autovacuum timestamp.
+
+
+Domain 8 
+
+Q: Which destinations produce structured output that a log shipper or table load can consume directly?
+A: jsonlog produces one JSON object per line, and csvlog produces fixed columns for COPY. Both require logging_collector = on. log_destination accepts a comma-separated list, so you can write to more than one destination.
+
+Q: Which setting captures slow statements with their text, and in what unit is it set?
+A: log_min_duration_statement is set in milliseconds. -1 disables it, and 0 logs every statement. It is a duration threshold, not a severity level.
+
+Q: How can a rotation setting silently destroy last week’s logs?
+A: When log_truncate_on_rotation is on and log_filename uses a repeating pattern, such as the day of the week, time-based rotation overwrites the same file on the next cycle.
+
+Q: Which setting records every INSERT, UPDATE, and DELETE, but not SELECT?
+A: log_statement = 'mod'. It also logs everything that 'ddl' logs; 'all' adds SELECT and every other statement.
+
+Q: Why is log_duration on its own rarely enough?
+A: It records the duration without the statement text, so there is nothing to attribute the time to. log_min_duration_statement logs the text with the duration.
+
+Q: Which parameter records every temporary file, and what value logs them all?
+A: log_temp_files: 0 logs every temporary file; -1 disables logging.
+
+Q: What does the %q escape do?
+A: It produces no output, but tells non-session processes to stop at that point, so background-process log lines do not contain empty user and database fields. Session processes ignore it.
+
+Q: Why set lc_messages to C and log_timezone to UTC?
+A: C provides the original English message text that the documentation and many tools assume. UTC keeps log timestamps comparable across servers and avoids repeated timestamps during daylight saving time changes.
+

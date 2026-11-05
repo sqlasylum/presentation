@@ -1,0 +1,3 @@
+# Session logs - do not commit
+logs/
+*.note
