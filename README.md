@@ -58,6 +58,21 @@ Good starting points:
 - [master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md](master_ai_prompts/PG_STAT_STATEMENTS_SETUP.md)
 - [LoadTesterWithAiPrompts.pdf](LoadTesterWithAiPrompts.pdf) for the companion presentation deck
 
+### firstdayasdataprofessional/
+
+Presentation focus: first-day guidance for data professionals, presented at Day of Data PNW 2026 on November 7, 2026.
+
+Good starting point:
+- [firstdayasdataprofessional/FirstDayasDataPerson_PNW.pdf](firstdayasdataprofessional/FirstDayasDataPerson_PNW.pdf)
+
+### pg_test_cram_session/
+
+Browser-based PostgreSQL DBA practice quizzes, with multiple question banks and related study materials. The quiz can be opened directly in a browser without a server or package installation.
+
+Good starting points:
+- [pg_test_cram_session/README.md](pg_test_cram_session/README.md)
+- [pg_test_cram_session/index.html](pg_test_cram_session/index.html)
+
 ### DB Migrations to the Cloud/
 
 Presentation focus: Steps you need to take to move from on Premise to the cloud for your Database. 
